@@ -13,14 +13,20 @@
     "insolita/yii2-adminlte-widgets": "^1.1",
     "kartik-v/yii2-widgets": "^3.4",
     "dmstr/yii2-adminlte-asset": "*"
+
   },
   "require-dev": {
     "infinitydevphp/yii2-repeater-model-validator": "dev-master",
-    "infinitydevphp/yii2-table-builder": "dev-master"
+    "infinitydevphp/yii2-table-builder": "dev-master",
+    "kartik-v/yii2-widget-activeform": "@dev",
+    "kartik-v/yii2-builder": "@dev"
   },
   "autoload": {
     "psr-4": {
-      "infinitydevphp\\tableGenerator\\": "src/"
-    }
+      "infinitydevphp\\gii\\": "src/"
+    },
+    "files": [
+      "src/Helper.php"
+    ]
   }
 }
