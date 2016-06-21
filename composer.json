@@ -1,0 +1,26 @@
+{
+  "name": "infinitydevphp/infinity-gii",
+  "description": "Yii2 Table generator",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "infinitydevphp",
+      "email": "infinitydevphp@gmail.com"
+    }
+  ],
+  "require": {
+    "insolita/yii2-adminlte-widgets": "^1.1",
+    "kartik-v/yii2-widgets": "^3.4",
+    "dmstr/yii2-adminlte-asset": "*"
+  },
+  "require-dev": {
+    "infinitydevphp/yii2-repeater-model-validator": "dev-master",
+    "infinitydevphp/yii2-table-builder": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "infinitydevphp\\tableGenerator\\": "src/"
+    }
+  }
+}
