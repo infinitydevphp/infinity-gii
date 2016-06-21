@@ -6,7 +6,7 @@
 <?php
 /* @var $this yii\web\View */
 /* @var $form yii\widgets\ActiveForm */
-/* @var $generator \infinitydevphp\tableGenerator\TranslateTableGenerator\Generator */
+/* @var $generator \infinitydevphp\gii\TranslateTableGenerator\Generator */
 
 use insolita\wgadminlte\Box;
 

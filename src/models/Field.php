@@ -3,13 +3,16 @@
  * @author infinitydevphp <infinitydevphp@gmail.com>
  */
 
-namespace infinitydevphp\tableGenerator\models;
+namespace infinitydevphp\gii\models;
 
+use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
 use yii\base\Model;
 use yii\db\Migration;
 use yii\db\Schema;
 use yii\gii\Generator;
 use yii\helpers\ArrayHelper;
+use yii\validators\BooleanValidator;
+use yii\validators\DefaultValueValidator;
 use yii\validators\NumberValidator;
 use yii\validators\RangeValidator;
 use yii\validators\RequiredValidator;
@@ -29,6 +32,7 @@ class Field extends Generator
     public $name;
     public $length;
     public $is_not_null;
+    public $is_unique;
     public $comment;
     public $default;
     public $related_table;
@@ -57,9 +61,10 @@ class Field extends Generator
         return [
             [['type', 'name'], RequiredValidator::className()],
             [['length', 'precision', 'scale'], NumberValidator::className()],
+            [['is_not_null', 'is_unique', 'unsigned'], BooleanValidator::className()],
             [['name'], StringValidator::className(), 'max' => 50],
-            [['comment'], StringValidator::className(), 'max' => 255],
-            [['type'], RangeValidator::className(), 'range' => $this->getTypeList()]
+            [['comment', 'fk_name'], StringValidator::className(), 'max' => 255],
+            [['type'], RangeValidator::className(), 'range' => $this->getTypeList()],
         ];
     }
 

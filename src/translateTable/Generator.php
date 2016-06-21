@@ -1,21 +1,21 @@
 <?php
-namespace infinitydevphp\tableGenerator\TranslateTableGenerator;
+namespace infinitydevphp\gii\translateTable;
 
 use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
 use infinitydevphp\tableBuilder\TableBuilder;
-use infinitydevphp\tableGenerator\models\Field;
+use infinitydevphp\gii\models\Field;
 use yii\db\Schema;
 use yii\helpers\ArrayHelper;
 use yii\gii\Generator as GeneratorBase;
-use infinitydevphp\tableGenerator\TableGenerator\Generator as TableGenerator;
+use infinitydevphp\gii\table\Generator as TableGenerator;
 use Yii;
 
 class Generator extends GeneratorBase
 {
     public $db = 'db';
-    /** @var  \infinitydevphp\tableGenerator\TableGenerator\Generator */
+    /** @var  TableGenerator */
     public $originTable;
-    /** @var  \infinitydevphp\tableGenerator\TableGenerator\Generator */
+    /** @var  TableGenerator */
     public $translateTable;
     public $createMigration = true;
     public $autoCreateTable = true;

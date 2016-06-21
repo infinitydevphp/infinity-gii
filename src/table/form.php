@@ -9,7 +9,7 @@ $notVisible = isset($notVisible) && is_array($notVisible) ? $notVisible : [];
 $titleBox = isset($titleBox) ? $titleBox : 'Origin table';
 /* @var $this yii\web\View */
 /* @var $form yii\widgets\ActiveForm */
-/* @var $generator \infinitydevphp\tableGenerator\TableGenerator\Generator */
+/* @var $generator \infinitydevphp\gii\table\Generator */
 
 use insolita\wgadminlte\Box;
 
@@ -37,6 +37,7 @@ if (!in_array('db', $notVisible)) {
 if (!in_array('migrationPath', $notVisible)) {
     echo $form->field($generator, $addition . 'migrationPath');
 }
+
 if (!in_array('createMigration', $notVisible)) {
     echo $form->field($generator, $addition . 'createMigration')->checkbox();
 }
@@ -44,6 +45,11 @@ if (!in_array('createMigration', $notVisible)) {
 if (!in_array('autoCreateTable', $notVisible)) {
     echo $form->field($generator, $addition . 'autoCreateTable')->checkbox();
 }
+
+if (!in_array('useTablePrefix', $notVisible)) {
+    echo $form->field($generator, $addition . 'useTablePrefix')->checkbox();
+}
+
 if (!in_array('dropIfExists', $notVisible)) {
     echo $form->field($generator, $addition . 'dropIfExists')->checkbox();
 }
@@ -80,7 +86,7 @@ echo $form->field($generator, $addition . 'fields')
             'validateOnBlur' => true,
         ],
         'data' => $generator->fields,
-        'baseModel' => \infinitydevphp\tableGenerator\models\Field::className(),
+        'baseModel' => \infinitydevphp\gii\models\Field::className(),
         'columns' => [
             [
                 'name' => 'name',
@@ -91,7 +97,7 @@ echo $form->field($generator, $addition . 'fields')
                 'name' => 'type',
                 'type' => \kartik\widgets\Select2::className(),
                 'options' => [
-                    'data' => \infinitydevphp\tableGenerator\models\Field::getTypes(),
+                    'data' => \infinitydevphp\gii\models\Field::getTypes(),
                 ], 'title' => 'Type'
             ],
             [
@@ -104,6 +110,18 @@ echo $form->field($generator, $addition . 'fields')
                 'enableError' => true,
                 'type' => 'checkbox',
                 'title' => 'Is Not Null'
+            ],
+            [
+                'name' => 'is_unique',
+                'enableError' => true,
+                'type' => 'checkbox',
+                'title' => 'Unique'
+            ],
+            [
+                'name' => 'unsigned',
+                'enableError' => true,
+                'type' => 'checkbox',
+                'title' => 'Unsigned'
             ],
             [
                 'name' => 'comment',

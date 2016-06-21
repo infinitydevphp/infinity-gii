@@ -13,3 +13,5 @@ composer.lock
 basic/
 node_modules/
 src/assets/
+*.sh
+*.iml
