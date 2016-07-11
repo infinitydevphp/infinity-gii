@@ -37,7 +37,7 @@ class Generator extends BaseGenerator
         $this->baseModel = new BaseModelGenerator([
             'additionName' => 'Generator[baseModel]',
             'createForm' => false,
-            'customBehaviors' => [
+            /*'customBehaviors' => [
                 'trans' => [
                     'checked' => true,
                     'title' => 'Multilanguage behavior',
@@ -47,9 +47,9 @@ class Generator extends BaseGenerator
                     'abridge' => false,
                     'class' => MultilingualBehavior::className(),
                     'langClassName' => '',
-                    'languages' => [],
+                    'languages' => null,
                 ]
-            ],
+            ],*/
         ]);
         $this->translateModel = new BaseModelGenerator([
             'additionName' => 'Generator[translateModel]',

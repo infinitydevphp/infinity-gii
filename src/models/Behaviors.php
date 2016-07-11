@@ -28,14 +28,16 @@ class Behaviors extends Model
     public $slugAttribute;
     public $userTable = 'user';
     public $immutable=true;
+    public $alias = '';
 
     public $languages;
     public $languageField;
     public $dynamicLangClass;
     public $requireTranslations;
+    public $langClassSuffix;
     public $abridge;
     public $tableName;
-    public $_attributesLang;
+    public $attributesLang;
     public $multilingualBehavior;
     public $langClassName;
 
@@ -55,6 +57,7 @@ class Behaviors extends Model
             [['createdByAttribute', 'updatedByAttribute'], 'blameable'],
             [['createdAtAttribute', 'updatedAtAttribute'], 'timestampValidator'],
             [['slugAttribute'], 'sluggableValidator'],
+            [['langClassSuffix', 'alias'], 'safe'],
             [['userTable', 'attribute', 'pathAttribute', 'baseUrlAttribute', 'name'], 'match', 'pattern' => '/^([\w ]+\.)?([\w\* ]+)$/', 'message' => 'Only word characters, and optionally spaces, an asterisk and/or a dot are allowed.'],
             [['immutable'], BooleanValidator::className()],
             [['attribute', 'pathAttribute', 'baseUrlAttribute'], 'uploadValidation'],
@@ -73,7 +76,7 @@ class Behaviors extends Model
             [['languageField'], DefaultValueValidator::className(), 'value' => function ($value, $model, $attribute=null) {
                 return $this->class || $this->tableName ? 'language' : $value;
             }],
-            [['_attributesLang'], DefaultValueValidator::className(), 'value' => function () {
+            [['attributesLang'], DefaultValueValidator::className(), 'value' => function () {
                 $this->class || $this->tableName ? [
                     new Field([
                         'name' => 'title',

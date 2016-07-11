@@ -4,7 +4,7 @@
  */
 
 /* @var $this yii\web\View */
-/* @var $generator yii\gii\generators\model\Generator */
+/* @var $generator \infinitydevphp\gii\model\Generator */
 /* @var $tableName string full table name */
 /* @var $className string class name */
 /* @var $tableSchema yii\db\TableSchema */
@@ -24,6 +24,7 @@ echo "<?php\n";
 
 namespace <?= $generator->queryNs ?>;
 
+<?= $generator->addUseQuery ?>
 /**
  * This is the ActiveQuery class for [[<?= $modelFullClassName ?>]].
  *
@@ -31,6 +32,7 @@ namespace <?= $generator->queryNs ?>;
  */
 class <?= $className ?> extends <?= '\\' . ltrim($generator->queryBaseClass, '\\') . "\n" ?>
 {
+    <?= $generator->addTraitsQuery; ?>
     /*public function active()
     {
         return $this->andWhere('[[status]]=1');

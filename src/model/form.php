@@ -101,22 +101,27 @@ echo $form->field($generator, 'useSchemaName')->checkbox([
     'name' => Helper\getName('useSchemaName', $generator)
 ]);
 
+$count = 0;
 foreach ($generator->behaviorModels as $key => $_next) {
-    $behavior = $generator->behaviorsType[$key];
+    $behavior = isset($generator->behaviorsType[$key]) ? $generator->behaviorsType[$key] :
+        (isset($generator->behaviorsType[$_next->alias]) ? $generator->behaviorsType[$_next->alias] : []);
 
-    Box::begin([
-        'type' => Box::TYPE_PRIMARY,
-        'withBorder' => true,
-        'title' => $behavior['name'],
-        'collapse' => true,
-    ]);
-    echo Form::widget([
-        'model' => $_next,
-        'columns' => 2,
-        'form' => $form,
-        'attributes' => $behavior['attributes'],
-    ]);
-    Box::end();
+    if (isset($behavior['attributes']) && count($behavior['attributes'])) {
+        Box::begin([
+            'type' => Box::TYPE_PRIMARY,
+            'withBorder' => true,
+            'title' => $behavior['name'],
+            'collapse' => true,
+        ]);
+        echo Form::widget([
+            'model' => $_next,
+            'columns' => 2,
+            'form' => $form,
+            'attributes' => $behavior['attributes'],
+        ]);
+        Box::end();
+    }
+    $count++;
 }
 if ($generator->createForm) {
     \kartik\widgets\ActiveForm::end();

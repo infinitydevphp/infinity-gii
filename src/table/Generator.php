@@ -18,7 +18,7 @@ class Generator extends GeneratorBase
     public $fields = [];
     public $tableName;
     public $createMigration = true;
-    public $migrationPath = '@app/migrations/';
+    public $migrationPath = '@common/migrations/db';
     public $autoCreateTable = true;
     public $primaryKeyName = 'id';
     public $migrationCreate = true;
@@ -38,6 +38,13 @@ class Generator extends GeneratorBase
             $this->fields = [new Field([
                 'name' => $this->primaryKeyName,
                 'type' => Schema::TYPE_PK,
+                'is_not_null' => true,
+                'comment' => 'ID'
+            ]),
+            new Field([
+                'name' => 'status',
+                'type' => Schema::TYPE_SMALLINT,
+                'default' => 1,
                 'is_not_null' => true,
                 'comment' => 'ID'
             ])];
