@@ -6,7 +6,9 @@ namespace infinitydevphp\gii\translateModelBehavior;
 use infinitydevphp\gii\models\Behaviors;
 use infinitydevphp\gii\models\Field;
 use infinitydevphp\tableBuilder\TableBuilder;
+use kartik\builder\Form;
 use omgdef\multilingual\MultilingualBehavior;
+use yii\base\Behavior;
 use yii\db\Connection;
 use yii\db\Exception;
 use yii\db\IntegrityException;
@@ -39,16 +41,22 @@ class Generator extends BaseGenerator
             'customBehaviors' => [
                 'trans' => [
                     'title' => 'Multilingual behavior',
+                    'alias' => 'trans',
+                    'checked' => true,
                     'languageField' => $this->languageField ?: 'language',
-                    'dynamicLangClass' => '',
+                    'langClassSuffix' => '',
+                    'dynamicLangClass' => false,
                     'requireTranslations' => false,
                     'abridge' => false,
-                    '_attributesLang' => 'title, body, lang',
-                    'class' => MultilingualBehavior::className(),
+                    'attributesLang' => 'title, body, lang',
                     'langClassName' => '',
-                    'languages' => [],
+                    'languages' => null,
+                    'class' => MultilingualBehavior::className(),
                 ]
             ],
+            'addUseQuery' => 'use omgdef\multilingual\MultilingualTrait;' . PHP_EOL,
+            'addTraitsQuery' => 'use MultilingualTrait;' . PHP_EOL,
+            'translateGenerator' => true,
         ]);
         $this->translateModel = new BaseModelGenerator([
             'additionName' => 'Generator[translateModel]',
@@ -81,6 +89,25 @@ class Generator extends BaseGenerator
                     $this->{$attr} = new BaseModelGenerator(ArrayHelper::merge($value, [
                         'additionName' => 'Generator[' . $attr . ']',
                         'createForm' => false,
+                        'customBehaviors' => [
+                            'trans' => [
+                                'title' => 'Multilingual behavior',
+                                'alias' => 'trans',
+                                'checked' => true,
+                                'languageField' => $this->languageField ?: 'language',
+                                'langClassSuffix' => '',
+                                'dynamicLangClass' => false,
+                                'requireTranslations' => false,
+                                'abridge' => false,
+                                'attributesLang' => 'title, body, lang',
+                                'langClassName' => '',
+                                'languages' => null,
+                                'class' => MultilingualBehavior::className(),
+                            ]
+                        ],
+                        'addUseQuery' => $attr == 'baseModel' ? 'use omgdef\multilingual\MultilingualTrait;' . PHP_EOL : '',
+                        'addTraitsQuery' => $attr == 'baseModel' ? 'use MultilingualTrait;' . PHP_EOL : '',
+                        'translateGenerator' => $attr == 'baseModel' ? true : false,
                     ]));
 
                     $this->{$attr}->tableBuilder = new TableGenerator($value['tableBuilder']);
@@ -92,7 +119,8 @@ class Generator extends BaseGenerator
                     $this->{$attr} = $value;
                 }
             }
-
+//            var_dump($this->translateModel->translateGenerator);
+//            exit;
             $result = $this->baseModel->validate();
 
             if (!$result) {
@@ -123,6 +151,15 @@ class Generator extends BaseGenerator
             $this->addError('baseModel', 'Base model error data');
         }
 
+        $this->translateModel->modelClass = $this->translateModel->modelClass ? : $this->baseModel->modelClass . "Translate";
+        $this->translateModel->ns = $this->translateModel->ns ? : $this->baseModel->ns;
+        if ($this->translateModel->generateQuery) {
+            $this->translateModel->queryNs = $this->translateModel->queryNs ?: $this->baseModel->queryNs;
+            $this->translateModel->queryClass = $this->translateModel->queryClass ?: $this->baseModel->queryClass . "Translate";
+            $this->translateModel->migrationPath = $this->baseModel->migrationPath;
+            $this->translateModel->tableBuilder->tableName = $this->translateModel->tableBuilder->tableName ? : $this->baseModel->tableBuilder->tableName . "_translate";
+        }
+
         $result = $this->translateModel->validate();
         if (!$result) {
             $this->addError('translateModel', 'Translate model error data');
@@ -151,6 +188,18 @@ class Generator extends BaseGenerator
         return 'Translate model & multilingual behavior';
     }
 
+    protected function findTranslateField($name) {
+        foreach ($this->translateModel->behaviorModels as $behavior) {
+            /** @var $behavior Behaviors */
+            if ($behavior->createdAtAttribute == $name ||
+                $behavior->updatedAtAttribute == $name || $behavior->updatedByAttribute || $behavior->createdByAttribute) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function generate()
     {
         try {
@@ -170,14 +219,46 @@ class Generator extends BaseGenerator
                 ]);
                 $tb->dropTable();
             }
-        } catch (Exception $exp) {
-        } catch (IntegrityException $exp) {
+        } catch (IntegrityException $exp) {} catch (Exception $exp) {}
+
+        if (!isset($this->baseModel->behaviorModels['trans'])) {
+            $this->baseModel->buildBehaviors($this->baseModel->customBehaviors);
+        }
+
+        if (isset($this->baseModel->behaviorModels['trans']) && ($trans = &$this->baseModel->behaviorModels['trans'])) {
+            /** @var Behaviors $trans */
+
+            $trans->checked = true;
+            if (!$trans->dynamicLangClass) {
+                $trans->attributesLang = [];
+
+                foreach ($this->translateModel->tableBuilder->fields as $field) {
+                    /** @var Field $field */
+                    if ($field->name == $this->languageField || $field->name == $this->baseModel->tableBuilder->tableName . '_id' ||
+                        $this->findTranslateField($field->name) || $field->name == $this->translateModel->tableBuilder->primaryKeyName) {
+                        continue;
+                    }
+
+                    $trans->attributesLang[] = $field->name;
+                    $trans->langClassName = $this->translateModel->ns . "\\" . $this->translateModel->modelClass;
+                }
+            } else {
+                $trans->attributesLang = is_array($trans->attributesLang) ? $trans->attributesLang : explode(',', $trans->attributesLang);
+            }
+
+            foreach ($trans->attributesLang as &$item) {
+                $item = trim($item);
+            }
         }
 
         $files = ArrayHelper::merge(
             $this->baseModel->generate(),
             $this->translateModel->generate()
         );
+
+        if (isset($trans)) {
+            $trans->attributesLang = implode(",", $trans->attributesLang);
+        }
 
         return $files;
     }

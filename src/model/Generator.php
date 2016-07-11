@@ -9,6 +9,7 @@ use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
 use kartik\builder\Form;
 use trntv\filekit\behaviors\UploadBehavior;
 use Yii;
+use yii\base\UnknownPropertyException;
 use yii\behaviors\BlameableBehavior;
 use yii\behaviors\SluggableBehavior;
 use yii\behaviors\TimestampBehavior;
@@ -34,6 +35,9 @@ class Generator extends ModelGeneratorBase
     protected $files = [];
     protected $autoCreateField = [];
     public $createForm = true;
+    public $addTraitsQuery = '';
+    public $addUseQuery = '';
+    public $translateGenerator = false;
 
     /**
      * @inheritdoc
@@ -48,6 +52,7 @@ class Generator extends ModelGeneratorBase
             'bleamble' => [
                 'checked' => false,
                 'title' => 'Blameable behavior',
+                'alias' => 'bleamble',
                 'updatedByAttribute' => [
                     'name' => 'updater_id',
                     'type' => Schema::TYPE_INTEGER,
@@ -67,6 +72,7 @@ class Generator extends ModelGeneratorBase
             ],
             'timestamp' => [
                 'checked' => false,
+                'alias' => 'timestamp',
                 'title' => 'Timestamp behavior',
                 'createdAtAttribute' => [
                     'name' => 'created_at',
@@ -81,6 +87,7 @@ class Generator extends ModelGeneratorBase
                 'class' => TimestampBehavior::className()
             ],
             'sluggable' => [
+                'alias' => 'sluggable',
                 'checked' => false,
                 'title' => 'Sluggable behavior',
                 'slugAttribute' => [
@@ -97,9 +104,9 @@ class Generator extends ModelGeneratorBase
                 ],
                 'immutable' => true,
                 'class' => SluggableBehavior::className(),
-                'immutable' => true,
             ],
             'upload' => [
+                'alias' => 'upload',
                 'checked' => false,
                 'title' => 'Upload behavior',
                 'pathAttribute' => [
@@ -118,6 +125,7 @@ class Generator extends ModelGeneratorBase
                 'attribute' => 'photo'
             ],
             'phone' => [
+                'alias' => 'phone',
                 'checked' => false,
                 'title' => 'Phone behavior',
                 'phoneAttribute' => [
@@ -135,14 +143,19 @@ class Generator extends ModelGeneratorBase
         $attributes = [];
         foreach ($behaviorAttributes as $_name => &$_next) {
             if (is_array($_next)) {
-                if (!is_array($this->autoCreateField[$behName])) {
-                    $this->autoCreateField[$behName][$_name] = [];
-                }
 
-                $this->autoCreateField[$behName][$_name] = new Field(array_merge($_next, [
-                    'name' => $_name
-                ]));
-                $_next = $_next['name'];
+                if (isset($_next['type'])) {
+
+                    if (!is_array($this->autoCreateField[$behName])) {
+                        $this->autoCreateField[$behName][$_name] = [];
+                    }
+
+                    $this->autoCreateField[$behName][$_name] = new Field(array_merge($_next, [
+                        'name' => $_name
+                    ]));
+                    $_next = $_next['name'];
+                } else {
+                }
             }
             $attributes[$_name] = [
                 'type' => $_name === 'class' ? Form::INPUT_HIDDEN : (is_bool($_next) ? Form::INPUT_CHECKBOX : Form::INPUT_TEXT),
@@ -160,16 +173,21 @@ class Generator extends ModelGeneratorBase
         return $config;
     }
 
-    protected function buildBehaviors($configs) {
-        $this->behaviorModels = $this->behaviorsType = [];
+    public function buildBehaviors($configs) {
+        if (!sizeof($this->behaviorsType)) {
+            $this->behaviorModels = $this->behaviorsType = [];
+        }
         foreach ($configs as $name => $behaviorConfig) {
+            $behaviorConfig = (array) $behaviorConfig;
             $title = isset($behaviorConfig['title']) ? $behaviorConfig['title'] : $name;
 
             if (isset($behaviorConfig['title'])) {
                 unset($behaviorConfig['title']);
             }
 
-            $this->behaviorsType[$name] = $this->buildNextType($title, $name, $this->additionName, $name, $behaviorConfig);
+            $config = $this->buildNextType($title, $name, $this->additionName, $name, $behaviorConfig);
+
+            $this->behaviorsType[$name] = $config;
             $this->behaviorModels[$name] = new Behaviors($behaviorConfig);
         }
     }
@@ -215,7 +233,7 @@ class Generator extends ModelGeneratorBase
         $rules[] = [['tableName'], 'tableNameValidate', 'skipOnEmpty' => false, 'skipOnError' => false];
         $rules[] = [['behaviorModels'], MultipleModelValidator::className(), 'baseModel' => Behaviors::className()];
         $rules[] = ['createTable', 'boolean'];
-        $rules[] = ['tableBuilder', 'safe'];
+        $rules[] = [['tableBuilder', 'customBehaviors'], 'safe'];
 
         return $rules;
     }
@@ -270,6 +288,7 @@ class Generator extends ModelGeneratorBase
                 'autoCreateTable' => $this->createTable,
             ]
         );
+
         $this->tableBuilder = new TableGenerator($options);
         $this->tableBuilder->forceTableCreate = $this->createTable;
         $result = $this->tableBuilder->validate() && parent::beforeValidate();
@@ -301,26 +320,28 @@ class Generator extends ModelGeneratorBase
     public function addNewField($name, $type, $comment, $reltable = null, $reffield = null, $length = null)
     {
         $ind = $this->findField($name);
-        $ind = is_bool($ind) ? sizeof($this->tableBuilder->fields) + 2 : $ind;
 
-        $this->tableBuilder->fields[$ind] = new Field([
+        return ['field' => new Field([
             'name' => $name,
             'type' => $type,
             'comment' => $comment,
             'length' => $length,
             'related_table' => $reltable,
             'related_field' => $reffield
-        ]);
+        ]), 'index' => $ind];
     }
 
     public function afterValidate()
     {
+        $size = count($this->tableBuilder->fields);
         foreach ($this->behaviorModels as $_name => $_next) {
-            if ($_next->checked && isset($this->autoCreateField[$_name])) {
-                foreach ($this->autoCreateField[$_name] as $field) {
+            if ($_next->checked && isset($this->autoCreateField[$_next->alias])) {
+                foreach ($this->autoCreateField[$_next->alias] as $field) {
                     /** @var $field Field */
                     $_next->name = $_next[$field['name']];
-                    $this->addNewField($_next[$field->name], $field->type, $field->comment, $field->related_table, $field->related_field, $field->length);
+                    $res = $this->addNewField($_next[$field->name], $field->type, $field->comment, $field->related_table, $field->related_field, $field->length);
+                    $index = is_bool($res['index']) ? $size++ : $res['index'];
+                    $this->tableBuilder->fields[$index] = $res['field'];
                 }
             }
         }
@@ -346,6 +367,7 @@ class Generator extends ModelGeneratorBase
      */
     public function generate()
     {
+//        var_dump($this->behaviorsType);
         $this->tableName = $this->createTable ? $this->tableBuilder->tableName : $this->tableName;
         $files = $this->files;
 
