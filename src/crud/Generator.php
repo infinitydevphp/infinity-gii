@@ -294,6 +294,8 @@ class Generator extends BaseCrudGenerator
             $controller .= (strlen($controller) ? '-' : '') . (strtolower($item));
         }
 
+        $nextModel->pathName = $nextModel->pathName ? : '_widgets';
+
         return str_replace(['{controller}', '{module}'], [$controller, $module],$this->render("views/{$nextModel->pathName}/_{$nextModel->widgetType}Input.php"));
     }
 
@@ -311,9 +313,14 @@ class Generator extends BaseCrudGenerator
     {
         /** @var ActiveRecord $model */
         $model = new $this->modelClass();
-        var_dump($model);
-        exit;
         $this->excludeField($model);
+
+        foreach ($this->columns as $index => $column) {
+            /** @var $column WidgetsCrud */
+            if (!$column->fieldName) {
+                unset($this->columns[$index]);
+            }
+        }
 
         if (!sizeof($this->columns) && $tableName = Yii::$app->db->schema->getRawTableName($model::tableName())) {
             $fields = Yii::$app->db->getTableSchema($tableName);
