@@ -322,7 +322,9 @@ class Generator extends BaseCrudGenerator
             }
         }
 
-        if (!sizeof($this->columns) && $tableName = Yii::$app->db->schema->getRawTableName($model::tableName())) {
+        if (/*!sizeof($this->columns) && */$tableName = Yii::$app->db->schema->getRawTableName($model::tableName())) {
+//            echo 123;
+//            exit;
             $fields = Yii::$app->db->getTableSchema($tableName);
             $columns = $fields->columns;
 
@@ -386,7 +388,5 @@ class Generator extends BaseCrudGenerator
         }
 
         return $files;
-
-        return parent::generate();
     }
 }

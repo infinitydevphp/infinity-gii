@@ -2,12 +2,12 @@
 
 use yii\helpers\Inflector;
 
-
 /* @var $this yii\web\View */
 /* @var $generator \infinitydevphp\gii\crud\Generator */
 
 /* @var $model \yii\db\ActiveRecord */
 $model = new $generator->modelClass();
+\infinitydevphp\gii\assets\ModelGeneratorAssets::register($this);
 $safeAttributes = $model->safeAttributes();
 if (empty($safeAttributes)) {
     $safeAttributes = $model->attributes();
