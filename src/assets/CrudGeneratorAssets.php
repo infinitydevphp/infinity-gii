@@ -7,7 +7,8 @@ use yii\web\AssetBundle;
 class CrudGeneratorAssets extends AssetBundle {
 
     public $js = [
-        'js/crud.js',
+        'crud/js/crud.js',
+        'model/js/model-generator.js'
     ];
 
     public $depends = [
@@ -15,6 +16,6 @@ class CrudGeneratorAssets extends AssetBundle {
     ];
 
     public function init() {
-        $this->sourcePath = __DIR__ . DIRECTORY_SEPARATOR . "src" . DIRECTORY_SEPARATOR . "crud";
+        $this->sourcePath = __DIR__ . DIRECTORY_SEPARATOR . "src" . DIRECTORY_SEPARATOR;
     }
 }

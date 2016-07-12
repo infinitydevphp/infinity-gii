@@ -8,6 +8,7 @@ use common\helpers\StringHelper;
 use infinitydevphp\gii\models\Field;
 use infinitydevphp\gii\models\WidgetsCrud;
 use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
+use omgdef\multilingual\MultilingualBehavior;
 use trntv\filekit\behaviors\UploadBehavior;
 use vova07\imperavi\Widget;
 use yii\base\Model;
@@ -31,6 +32,12 @@ class Generator extends BaseCrudGenerator
     public $excludedField = [];
     protected $fieldExclude = [];
     public $enableI18N = true;
+    public $translateAttribute = [];
+    public $translateTable = '';
+
+    public $isMultilingual = false;
+    public $languageField = 'language';
+
     protected $columnUsed = [
         '' => [
             
@@ -74,6 +81,8 @@ class Generator extends BaseCrudGenerator
         ],
         'select2' => [
             '\kartik\select2\Select2',
+        ],
+        'statuses' => [
         ],
         'tinymce' => [
             'zxbodya\yii2\tinymce\TinyMce',
@@ -124,10 +133,14 @@ class Generator extends BaseCrudGenerator
 
         return false;
     }
+
+    public $reallyControllerNs;
+    public $reallySearchNs;
+
     /**
      * @param ActiveRecord $model
      */
-    protected function excludeField($model)
+    protected function excludeField($model, $addition='')
     {
         $this->fieldExclude = ArrayHelper::merge(
             is_array($this->excludedField) ? $this->excludedField : [$this->excludedField],
@@ -154,49 +167,58 @@ class Generator extends BaseCrudGenerator
             if ($_next['class'] === BlameableBehavior::className()) {
                 if (isset($_next['updatedByAttribute'])) {
                     if (!empty($_next['updatedByAttribute'])) {
-                        $this->fieldExclude[] = $_next['updatedByAttribute'];
+                        $this->fieldExclude[] = $addition.$_next['updatedByAttribute'];
                     }
                 } else {
-                    $this->fieldExclude[] = 'updated_by';
+                    $this->fieldExclude[] = $addition.'updated_by';
                 }
                 if (isset($_next['createdByAttribute'])) {
                     if (!empty($_next['createdByAttribute'])) {
-                        $this->fieldExclude[] = $_next['createdByAttribute'];
+                        $this->fieldExclude[] = $addition.$_next['createdByAttribute'];
                     }
                 } else {
-                    $this->fieldExclude[] = 'created_by';
+                    $this->fieldExclude[] = $addition.'created_by';
                 }
-            }
-            if ($_next['class'] === TimestampBehavior::className()) {
+            } else if ($_next['class'] === TimestampBehavior::className()) {
                 if (isset($_next['updatedAtAttribute'])) {
                     if (!empty($_next['updatedAtAttribute'])) {
-                        $this->fieldExclude[] = $_next['updatedAtAttribute'];
+                        $this->fieldExclude[] = $addition.$_next['updatedAtAttribute'];
                     }
                 } else {
-                    $this->fieldExclude[] = 'updated_at';
+                    $this->fieldExclude[] = $addition.'updated_at';
                 }
                 if (isset($_next['createdAtAttribute'])) {
                     if (!empty($_next['createdAtAttribute'])) {
-                        $this->excludedField[] = $_next['createdAtAttribute'];
+                        $this->fieldExclude[] = $addition.$_next['createdAtAttribute'];
                     }
                 } else {
-                    $this->fieldExclude[] = 'created_at';
+                    $this->fieldExclude[] = $addition.'created_at';
                 }
-            }
-            if ($_next['class'] === PhoneInputBehavior::className()) {
-                $this->columns[] = new WidgetsCrud([
-                    'fieldName' => $_next['phoneAttribute'],
-                    'widgetType' => 'phone'
-                ]);
-            }
-            if ($_next['class'] === UploadBehavior::className()) {
-                $this->hasUploadBehavior = $_next['attribute'];
-                $this->excludedField[] = $_next['pathAttribute'];
-                $this->excludedField[] = $_next['baseUrlAttribute'];
-                $this->columns[] = new WidgetsCrud([
-                    'fieldName' => $_next['attribute'],
-                    'widgetType' => 'upload'
-                ]);
+            } else if ($_next['class'] === PhoneInputBehavior::className()) {
+                if (!$this->searchColumn($_next['phoneAttribute'])) {
+                    $this->columns[] = new WidgetsCrud([
+                        'fieldName' => $_next['phoneAttribute'],
+                        'widgetType' => 'phone'
+                    ]);
+                }
+            } else if ($_next['class'] === UploadBehavior::className()) {
+                if (!is_array($this->hasUploadBehavior)) {
+                    $this->hasUploadBehavior = [
+                        'attributes' => []
+                    ];
+                }
+                $this->hasUploadBehavior['attributes'][] = isset($_next['attribute']) ? $_next['attribute'] : $_next['attribute'];
+                $this->hasUploadBehavior[] = $_next['pathAttribute'];
+                $this->hasUploadBehavior[] = $_next['baseUrlAttribute'];
+
+                $this->fieldExclude[] = $addition.$_next['pathAttribute'];
+                $this->fieldExclude[] = $addition.$_next['baseUrlAttribute'];
+                if (!$this->searchColumn($this->hasUploadBehavior)) {
+                    $this->columns[] = new WidgetsCrud([
+                        'fieldName' => $addition . $_next['attribute'],
+                        'widgetType' => 'upload'
+                    ]);
+                }
                 if (isset($this->columnUsed['upload']) && ($uses = $this->columnUsed['upload'])) {
                     if (isset($uses['expression'])) {
                         $this->expressions = ArrayHelper::merge($this->expressions, $uses['expression']);
@@ -205,6 +227,20 @@ class Generator extends BaseCrudGenerator
                 }
 
                 $this->used = ArrayHelper::merge($this->used, $uses);
+            } else if ($_next['class'] === MultilingualBehavior::className()) {
+                $this->isMultilingual = true;
+                $this->languageField = $_next['languageField'];
+                $this->translateAttribute = $_next['attributes'];
+                $class = $_next['langClassName'];
+
+                if (class_exists($class)) {
+                    /** @var ActiveRecord $class */
+                    $class = new $class;
+                    $this->translateTable = $class::tableName();
+                } else {
+                    $this->translateTable = $_next['tableName'];
+                }
+                $this->excludeField($class, 'translations.');
             }
         }
 
@@ -216,6 +252,7 @@ class Generator extends BaseCrudGenerator
         return [
             '' => 'Not set',
             'ckEditor' => 'CK Editor Widget',
+            'statuses' => 'Status change input',
             'color' => 'Color Input Widget',
             'datePicker' => 'Date picker Widget',
             'dateRange2FieldPicker' => 'Range Date picker Widget',
@@ -239,17 +276,23 @@ class Generator extends BaseCrudGenerator
 
     protected function widgetByFieldType($type, $name)
     {
-        if (in_array($name, $this->fieldExclude)) {
-            return false;
-        }
-
         $config = [
             'color' => ['patterns' => ['color']],
             'tinyMce' => [Schema::TYPE_TEXT],
-            'uploadInput' => ['hasBehaviorClassName' => 'upload'],
+            'uploadInput' => ['hasBehaviorClassName' => 'upload', 'after' => function (&$generator, $attribute) {
+                /** @var $generator Generator */
+                if (!is_array($this->hasUploadBehavior)) {
+                    $this->hasUploadBehavior = [
+                        'attributes' => [],
+                    ];
+                }
+                $generator->hasUploadBehavior['attributes'][] = $attribute;
+            }, 'patterns' => ['(photo|img|image|avatar)']],
             'datePicker' => [Schema::TYPE_DATE, Schema::TYPE_DATETIME, Schema::TYPE_TIMESTAMP],
             'timePicker' => [Schema::TYPE_TIME],
             'trevor' => ['patterns' => ['trevor']],
+            'statuses' => ['patterns' => ['status']],
+            'select2' => ['patterns' => ['_id']],
             'langSelect' => ['patterns' => ['language']],
             'password' => [
                 'patterns' => ['^(password|pass|passwd|passcode)$']
@@ -261,12 +304,28 @@ class Generator extends BaseCrudGenerator
                 $patterns = !is_array($_next['patterns']) ? [$_next['patterns']] : $_next['patterns'];
                 foreach ($patterns as $pattern) {
                     if (preg_match("/" . $pattern . "/i", $name)) {
+                        if (isset($_next['after']) && $_next['after'] instanceof \Closure) {
+                            $func = $_next['after'];
+                            $func($this, $name);
+                        }
                         return $_nameWidget;
                     }
                 }
             }
 
             if (in_array($type, $_next)) {
+                return $_nameWidget;
+            }
+
+            /** @var Model $model */
+            $model = new $this->modelClass;
+            $behaviors = $model->getBehaviors();
+            if (isset($_next['hasUploadBehavior']) && is_array($behaviors) && isset($behaviors[$_next['hasUploadBehavior']])) {
+                if (isset($_next['after']) && $_next['after'] instanceof \Closure) {
+                    $func = $_next['after'];
+                    $func($this, $name);
+                }
+
                 return $_nameWidget;
             }
         }
@@ -309,6 +368,52 @@ class Generator extends BaseCrudGenerator
         return 'Crud generator with custom widget';
     }
 
+    protected function checkTableName($tableName, $force = false, array $attribute=null, $additionFieldName='') {
+
+        if (($force || count($attribute) || (!sizeof($this->columns)) && $tableName = Yii::$app->db->schema->getRawTableName($tableName))) {
+            $fields = Yii::$app->db->getTableSchema($tableName);
+            $columns = $fields->columns;
+
+
+            foreach ($columns as $column) {
+                $columnName = $additionFieldName . $column->name;
+                if (in_array($columnName, $this->fieldExclude) || $column->name == 'id') {
+                    continue;
+                }
+                $typeWidget = $this->widgetByFieldType($column->type, $columnName);
+                if (!$this->searchColumn($columnName)) {
+                    if (!is_bool($typeWidget)) {
+                        $this->columns[] = new WidgetsCrud([
+                            'widgetType' => $typeWidget,
+                            'fieldName' => $columnName
+                        ]);
+                    } else {
+                        $this->columns[] = new WidgetsCrud([
+                            'widgetType' => '',
+                            'fieldName' => $columnName
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    public function searchUploadAttribute() {
+        foreach ($this->columns as $column) {
+            /** @var $column WidgetsCrud */
+            if ($column->widgetType == 'upload') {
+                if (!is_array($this->hasUploadBehavior)) {
+                    $this->hasUploadBehavior = [
+                        'attributes' => [
+
+                        ],
+                    ];
+                }
+                $this->hasUploadBehavior['attributes'][] = $column->fieldName;
+            }
+        }
+    }
+
     public function generate()
     {
         /** @var ActiveRecord $model */
@@ -322,23 +427,13 @@ class Generator extends BaseCrudGenerator
             }
         }
 
-        if (!sizeof($this->columns) && $tableName = Yii::$app->db->schema->getRawTableName($model::tableName())) {
-            $fields = Yii::$app->db->getTableSchema($tableName);
-            $columns = $fields->columns;
-
-            foreach ($columns as $column) {
-                echo $column->name . ' ' . $column->type . "<br/>";
-                $typeWidget = $this->widgetByFieldType($column->type, $column->name);
-                if (!is_bool($typeWidget)) {
-                    if (!$this->searchColumn($column->name)) {
-                        $this->columns[] = new WidgetsCrud([
-                            'widgetType' => $typeWidget,
-                            'fieldName' => $column->name
-                        ]);
-                    }
-                }
-            }
+        $emptyColumn = count($this->columns) === 0;
+        $this->checkTableName($model::tableName(), $emptyColumn);
+        if (count($this->translateAttribute) && $this->translateTable) {
+            $this->checkTableName($this->translateTable, $emptyColumn, $this->translateAttribute, 'translations.');
         }
+
+        $this->searchUploadAttribute();
 
         foreach ($this->columns as $column) {
             /** @var WidgetsCrud $column */
@@ -360,33 +455,63 @@ class Generator extends BaseCrudGenerator
             }
             $this->used = ArrayHelper::merge($this->used, $default);
         }
+        $files = [];
 
         $this->used = array_unique($this->used);
         $this->expressions = array_unique($this->expressions);
-        $controllerFile = Yii::getAlias('@' . str_replace('\\', '/', ltrim($this->controllerClass, '\\')) . '.php');
-
-        $files = [
-            new CodeFile($controllerFile, $this->render('controller.php')),
-        ];
-
+        $nsBackFront = ltrim($this->controllerClass, '\\');
+        $controllerName = explode('\\', $nsBackFront);
+        $controller = end($controllerName);
+        unset($controllerName[count($controllerName) - 1]);
+        $nsBackCont = implode('/', $controllerName) . '/backend/' . $controller;
         if (!empty($this->searchModelClass)) {
-            $searchModel = Yii::getAlias('@' . str_replace('\\', '/', ltrim($this->searchModelClass, '\\') . '.php'));
+            $nsFrontSearch = ltrim($this->searchModelClass, '\\');
+            $searchModelName = explode('\\', $nsFrontSearch);
+            $searchModel = end($searchModelName);
+            unset($searchModelName[count($searchModelName) - 1]);
+            $nsBackSearch = implode('/', $searchModelName) . '/backend/' . $searchModel;
+
+            $this->reallySearchNs = $nsBackSearch;
+            $searchModel = Yii::getAlias('@' . str_replace('\\', '/', ltrim($this->reallySearchNs, '\\') . '.php'));
             $files[] = new CodeFile($searchModel, $this->render('search.php'));
         }
+        $this->reallyControllerNs = $nsBackCont;
+        $controllerFile = Yii::getAlias('@' . str_replace('\\', '/', $this->reallyControllerNs) . '.php');
+        $files[] = new CodeFile($controllerFile, $this->render('controller.php'));
 
-        $viewPath = $this->getViewPath();
+        $viewPath = explode('controllers', $controllerFile);
+        $viewPath = $viewPath[0] . 'views/';
         $templatePath = $this->getTemplatePath() . '/views';
         foreach (scandir($templatePath) as $file) {
             if (empty($this->searchModelClass) && $file === '_search.php') {
                 continue;
             }
+
             if (is_file($templatePath . '/' . $file) && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
-                $files[] = new CodeFile("$viewPath/$file", $this->render("views/$file"));
+                $files[] = new CodeFile("{$viewPath}backend/" . $this->getControllerID() . "/$file", $this->render("views/$file"));
+            }
+        }
+
+        $this->reallyControllerNs = $nsBackFront;
+        $controllerFileFront = Yii::getAlias('@' . str_replace('\\', '/', $this->reallyControllerNs) . '.php');
+
+        if (!empty($this->searchModelClass)) {
+            $this->reallySearchNs = $nsFrontSearch;
+            $searchModel = Yii::getAlias('@' . str_replace('\\', '/', ltrim($this->reallySearchNs, '\\') . '.php'));
+            $files[] = new CodeFile($searchModel, $this->render('search.php'));
+        }
+
+        $files[] = new CodeFile($controllerFileFront, $this->render('frontEndController.php'));
+
+        foreach (scandir($templatePath . '/front/') as $file) {
+            if (empty($this->searchModelClass) && $file === '_search.php') {
+                continue;
+            }
+            if (is_file($templatePath . '/front/' . $file) && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
+                $files[] = new CodeFile("$viewPath" . $this->getControllerID() . "/$file", $this->render("views/front/$file"));
             }
         }
 
         return $files;
-
-        return parent::generate();
     }
 }

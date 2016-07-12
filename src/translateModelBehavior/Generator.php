@@ -48,6 +48,7 @@ class Generator extends BaseGenerator
                     'dynamicLangClass' => false,
                     'requireTranslations' => false,
                     'abridge' => false,
+                    'langForeignKey' => '',
                     'attributesLang' => 'title, body, lang',
                     'langClassName' => '',
                     'languages' => null,
@@ -99,6 +100,7 @@ class Generator extends BaseGenerator
                                 'dynamicLangClass' => false,
                                 'requireTranslations' => false,
                                 'abridge' => false,
+                                'langForeignKey' => '',
                                 'attributesLang' => 'title, body, lang',
                                 'langClassName' => '',
                                 'languages' => null,
@@ -119,8 +121,7 @@ class Generator extends BaseGenerator
                     $this->{$attr} = $value;
                 }
             }
-//            var_dump($this->translateModel->translateGenerator);
-//            exit;
+
             $result = $this->baseModel->validate();
 
             if (!$result) {
@@ -192,12 +193,24 @@ class Generator extends BaseGenerator
         foreach ($this->translateModel->behaviorModels as $behavior) {
             /** @var $behavior Behaviors */
             if ($behavior->createdAtAttribute == $name ||
-                $behavior->updatedAtAttribute == $name || $behavior->updatedByAttribute || $behavior->createdByAttribute) {
+                $behavior->updatedAtAttribute == $name ||
+                $behavior->updatedByAttribute == $name ||
+                $behavior->createdByAttribute == $name) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    protected function findTranslatableBehavior() {
+        foreach ($this->baseModel->behaviorModels as &$behaviorModel) {
+            if ($behaviorModel->class === MultilingualBehavior::className()) {
+                return $behaviorModel;
+            }
+        }
+
+        return null;
     }
 
     public function generate()
@@ -225,7 +238,7 @@ class Generator extends BaseGenerator
             $this->baseModel->buildBehaviors($this->baseModel->customBehaviors);
         }
 
-        if (isset($this->baseModel->behaviorModels['trans']) && ($trans = &$this->baseModel->behaviorModels['trans'])) {
+        if (isset($this->baseModel->behaviorModels['trans']) && ($trans = $this->findTranslatableBehavior())) {
             /** @var Behaviors $trans */
 
             $trans->checked = true;
@@ -234,8 +247,8 @@ class Generator extends BaseGenerator
 
                 foreach ($this->translateModel->tableBuilder->fields as $field) {
                     /** @var Field $field */
-                    if ($field->name == $this->languageField || $field->name == $this->baseModel->tableBuilder->tableName . '_id' ||
-                        $this->findTranslateField($field->name) || $field->name == $this->translateModel->tableBuilder->primaryKeyName) {
+                    if ($field->name == $this->baseModel->tableBuilder->tableName . '_id' ||
+                        !$this->findTranslateField($field->name) || $field->name == $this->translateModel->tableBuilder->primaryKeyName) {
                         continue;
                     }
 

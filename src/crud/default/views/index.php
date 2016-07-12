@@ -33,13 +33,51 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= "<?php echo " ?>Html::a(<?= $generator->generateString('Create {modelClass}', ['modelClass' => Inflector::camel2words($generator->getModelNameForView())]) ?>, ['create'], ['class' => 'btn btn-success']) ?>
     </p>
     <?= "<?php " ?>\yii\widgets\Pjax::begin(['enablePushState' => false,'timeout' => 3000]); ?>
-<?php if ($generator->indexWidgetType === 'grid'): ?>
+<?php if ($generator->indexWidgetType === 'grid') { ?>
     <?= "<?php echo " ?>GridView::widget([
         'dataProvider' => $dataProvider,
         <?= !empty($generator->searchModelClass) ? "'filterModel' => \$searchModel,\n        'columns' => [\n" : "'columns' => [\n"; ?>
 <?php
 $count = 0;
-if (($tableSchema = $generator->getTableSchema()) === false) {
+if (sizeof($generator->columns)) {
+    $previous = ['id'];
+    echo "            'id',\n";
+    foreach ($generator->columns as $column) {
+        /** @var $column \infinitydevphp\gii\models\WidgetsCrud */
+        $arrays = explode('.', $column->fieldName);
+        $fieldName = end($arrays);
+        if (in_array($fieldName, $previous)) continue;
+
+        if (substr_count(strtolower($column->widgetType), 'langselect') ) {
+            echo "            [\n";
+            echo "              'attribute' => '" . $fieldName . "',\n";
+            echo "              'filter' => is_array(Yii::\$app->params['availableLocales']) ? Yii::\$app->params['availableLocales'] : [],\n";
+            echo "            ],\n";
+        } else if (substr_count(strtolower($column->widgetType), 'status') ) {
+            echo "            [\n";
+            echo "              'attribute' => '" . $fieldName . "',\n";
+            echo "              'filter' => \$searchModel::getStatuses(),\n";
+            echo "            ],\n";
+        } else if (substr_count(strtolower($column->widgetType), 'select')) {
+            echo "            [\n";
+            echo "              'attribute' => '" . $fieldName . "',\n";
+            echo "              'filter' => [],\n";
+            echo "            ],\n";
+        } else if (preg_match('(photo|avatar|image|img)', $fieldName)) {
+            echo "            [\n";
+            echo "              'attribute' => '" . $fieldName . "',\n";
+            echo "              'format' => 'raw',\n";
+            echo "              'filter' => false,\n";
+            echo "              'value' => function (\$model, \$key, \$index) {\n";
+            echo "                  return '<img src=\"' . \$model->getPreview" . ucfirst(mb_strtolower($fieldName)) . "() . '\" width=\"100\"/>';\n";
+            echo "              },\n";
+            echo "            ],\n";
+        } else {
+            echo "            '" . $fieldName . "',\n";
+        }
+        $previous[] = $fieldName;
+    }
+} else if (($tableSchema = $generator->getTableSchema()) === false) {
     foreach ($generator->getColumnNames() as $name) {
         if (++$count < 6) {
             echo "            '" . $name . "',\n";
@@ -67,7 +105,7 @@ if (($tableSchema = $generator->getTableSchema()) === false) {
     ]);
     ?>
     <?= "<?php " ?>\yii\widgets\Pjax::end(); ?>
-<?php else: ?>
+<?php } else { ?>
     <?= "<?php echo " ?>ListView::widget([
         'dataProvider' => $dataProvider,
         'itemOptions' => ['class' => 'item'],
@@ -75,6 +113,6 @@ if (($tableSchema = $generator->getTableSchema()) === false) {
             return Html::a(Html::encode($model-><?= $nameAttribute ?>), ['view', <?= $urlParams ?>]);
         },
     ]) ?>
-<?php endif; ?>
+<?php } ?>
 
 </div>

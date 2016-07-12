@@ -2,12 +2,12 @@
 
 use yii\helpers\Inflector;
 
-
 /* @var $this yii\web\View */
 /* @var $generator \infinitydevphp\gii\crud\Generator */
 
 /* @var $model \yii\db\ActiveRecord */
 $model = new $generator->modelClass();
+\infinitydevphp\gii\assets\ModelGeneratorAssets::register($this);
 $safeAttributes = $model->safeAttributes();
 if (empty($safeAttributes)) {
     $safeAttributes = $model->attributes();
@@ -48,7 +48,9 @@ foreach ($generator->expressions as $expression) {
 if (count($generator->columns)) {
     foreach ($generator->columns as $column) {
         /** @var $column \infinitydevphp\gii\models\WidgetsCrud */
-        echo "    <?php echo " . str_replace('{field}', '\'' . $column->fieldName . '\'', $generator->generateWidgetActiveField($column)) . " ?>\n\n";
+        $arrays = explode('.', $column->fieldName);
+        $field = end($arrays);
+        echo "    <?php echo " . str_replace(['{field}', '{model}'], [$field, '$model'], $generator->generateWidgetActiveField($column)) . " ?>\n\n";
     }
 } else {
 foreach ($safeAttributes as $attribute) {

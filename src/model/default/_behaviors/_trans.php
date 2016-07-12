@@ -17,6 +17,6 @@ $model->attributesLang = !is_array($model->attributesLang) ? explode(',', $model
                     'class' => '<?= $model->class ?>',
                     'langClassName' => '<?= $model->langClassName ?>',
 <?php if (count($langs)) { ?>
-                    'languages' => ['<?= implode('\', \'', $langs); ?>'],
+                    'languages' => is_array(Yii::$app->params['availableLocales']) ? Yii::$app->params['availableLocales'] : ['<?= implode('\', \'', $langs); ?>'],
 <?php } ?>
 

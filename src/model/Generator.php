@@ -7,6 +7,7 @@ use infinitydevphp\gii\models\Field;
 use infinitydevphp\gii\table\Generator as TableGenerator;
 use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
 use kartik\builder\Form;
+use omgdef\multilingual\MultilingualBehavior;
 use trntv\filekit\behaviors\UploadBehavior;
 use Yii;
 use yii\base\UnknownPropertyException;
@@ -45,6 +46,24 @@ class Generator extends ModelGeneratorBase
     public function getName()
     {
         return 'Model Generator with behaviors';
+    }
+
+    /**
+     * @param null $class
+     * @return array|null
+     */
+    public function checkMultilingualBehavior($class = null) {
+        $class = $class ? : MultilingualBehavior::className();
+        $classes = [];
+        foreach ($this->behaviorModels as $behaviorModel) {
+            if ($behaviorModel->class === $class) {
+                $_class = isset($behaviorModel['langClassName']) ? $behaviorModel['langClassName'] : '';
+                if ($_class)
+                    $classes[] = $_class;
+            }
+        }
+
+        return count($classes) ? $classes : null;
     }
 
     public function predefineBehaviors() {
@@ -146,6 +165,9 @@ class Generator extends ModelGeneratorBase
 
                 if (isset($_next['type'])) {
 
+                    if (!isset($this->autoCreateField[$behName])) {
+                        $this->autoCreateField[$behName] = [];
+                    }
                     if (!is_array($this->autoCreateField[$behName])) {
                         $this->autoCreateField[$behName][$_name] = [];
                     }
@@ -232,7 +254,7 @@ class Generator extends ModelGeneratorBase
 
         $rules[] = [['tableName'], 'tableNameValidate', 'skipOnEmpty' => false, 'skipOnError' => false];
         $rules[] = [['behaviorModels'], MultipleModelValidator::className(), 'baseModel' => Behaviors::className()];
-        $rules[] = ['createTable', 'boolean'];
+        $rules[] = [['createTable'], 'boolean'];
         $rules[] = [['tableBuilder', 'customBehaviors'], 'safe'];
 
         return $rules;
@@ -331,6 +353,37 @@ class Generator extends ModelGeneratorBase
         ]), 'index' => $ind];
     }
 
+    protected function getTranslateBehavior() {
+        foreach ($this->behaviorModels as $behaviorModel) {
+            if ($behaviorModel->class === MultilingualBehavior::className())
+                return $behaviorModel;
+        }
+
+        return null;
+    }
+
+    public function getAnotherPublicAttribute() {
+        $attribute = [];
+        foreach ($this->behaviorModels as $behaviorModel) {
+            if ($behaviorModel->class === UploadBehavior::className()) {
+                $attribute[] = $behaviorModel->attribute;
+            }
+        }
+
+        return $attribute;
+    }
+
+    public function getDefinitionAttribute() {
+        $attribute = [];
+        $model = $this->getTranslateBehavior();
+
+        if ($model) {
+            $attribute = ArrayHelper::merge($attribute, $model->attributesLang);
+        }
+
+        return $attribute;
+    }
+
     public function afterValidate()
     {
         $size = count($this->tableBuilder->fields);
@@ -367,7 +420,6 @@ class Generator extends ModelGeneratorBase
      */
     public function generate()
     {
-//        var_dump($this->behaviorsType);
         $this->tableName = $this->createTable ? $this->tableBuilder->tableName : $this->tableName;
         $files = $this->files;
 
@@ -416,9 +468,9 @@ class Generator extends ModelGeneratorBase
     {
         $rules = parent::generateRules($table);
 
-        if ($this->behaviorModels[4]->checked) {
-            if ($this->behaviorModels[4]->phoneAttribute) {
-                $rules[] = "[['{$this->behaviorModels[4]->phoneAttribute}'], 'borales\\extensions\\phoneInput\\PhoneInputValidator']";
+        if ($this->behaviorsType['phone']['checked']) {
+            if ($this->behaviorType['phone']['phoneAttribute']) {
+                $rules[] = "[['{$this->behaviorType['phone']['phoneAttribute']}'], 'borales\\extensions\\phoneInput\\PhoneInputValidator']";
             }
         }
 

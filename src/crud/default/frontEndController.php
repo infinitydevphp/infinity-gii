@@ -85,20 +85,14 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 
     public function actions() {
         return ArrayHelper::merge(parent::actions(), [
-<?php   if ($attribute) {
-    foreach ($attribute['attributes'] as $attr) {
-        $attr = explode('.', $attr);
-        $attr = end($attr);
-?>
-                '<?=$attr?>-upload' => [
+<?php   if ($attribute) { ?>
+                '<?=$attribute?>-upload' => [
                     'class' => UploadAction::className(),
-                    'deleteRoute' => '<?=$attr?>-delete',
+                    'deleteRoute' => '<?=$attribute?>-delete',
                 ],
-                    '<?=$attr?>-delete' => [
+                    '<?=$attribute?>-delete' => [
                     'class' => DeleteAction::className()
                 ]
-<?php
-}?>
 <?php } ?>
         ]);
     }

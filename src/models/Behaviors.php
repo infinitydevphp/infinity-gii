@@ -40,6 +40,7 @@ class Behaviors extends Model
     public $attributesLang;
     public $multilingualBehavior;
     public $langClassName;
+    public $langForeignKey;
 
     public $name;
     public $attribute;
@@ -63,6 +64,7 @@ class Behaviors extends Model
             [['attribute', 'pathAttribute', 'baseUrlAttribute'], 'uploadValidation'],
             [['createdAtAttribute', 'updatedAtAttribute', 'createdByAttribute', 'updatedByAttribute'], 'string', 'max' => 255],
             [['phoneAttribute'], 'phoneValidate'],
+            [['langForeignKey'], 'langField'],
             [['dynamicLangClass'], DefaultValueValidator::className(), 'value' => function ($value, $model, $attribute=null) {
                 return $this->class || $this->tableName ? true : null;
             }],
@@ -100,9 +102,19 @@ class Behaviors extends Model
         ];
     }
 
+    public function langField() {
+        if (!($this->class === MultilingualBehavior::className())) {
+            return;
+        }
+
+        if (!$this->langForeignKey) {
+            $this->addError('lagForeignKey', 'Relation field not set');
+        }
+    }
+
     public function classValid($attribute) {
 
-        if (!$this->multilingualBehavior) {
+        if (!($this->class === MultilingualBehavior::className())) {
             return;
         }
 
