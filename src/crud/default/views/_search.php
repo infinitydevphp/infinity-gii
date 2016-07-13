@@ -4,7 +4,7 @@ use yii\helpers\Inflector;
 
 
 /* @var $this yii\web\View */
-/* @var $generator yii\gii\generators\crud\Generator */
+/* @var $generator \infinitydevphp\gii\crud\Generator */
 
 echo "<?php\n";
 ?>
@@ -13,7 +13,7 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
 /* @var $this yii\web\View */
-/* @var $model <?= ltrim($generator->searchModelClass, '\\') ?> */
+/* @var $model <?= ltrim($generator->reallySearchNs, '\\') ?> */
 /* @var $form yii\widgets\ActiveForm */
 ?>
 

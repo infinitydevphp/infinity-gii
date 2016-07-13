@@ -48,7 +48,8 @@ foreach ($generator->expressions as $expression) {
 if (count($generator->columns)) {
     foreach ($generator->columns as $column) {
         /** @var $column \infinitydevphp\gii\models\WidgetsCrud */
-        echo "    <?php echo " . str_replace('{field}', '\'' . $column->fieldName . '\'', $generator->generateWidgetActiveField($column)) . " ?>\n\n";
+        $field = end(explode('.', $column->fieldName));
+        echo "    <?php echo " . str_replace(['{field}', '{model}'], [$field, '$model'], $generator->generateWidgetActiveField($column)) . " ?>\n\n";
     }
 } else {
 foreach ($safeAttributes as $attribute) {

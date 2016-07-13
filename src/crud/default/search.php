@@ -7,10 +7,10 @@ use yii\helpers\StringHelper;
 
 
 /* @var $this yii\web\View */
-/* @var $generator yii\gii\generators\crud\Generator */
+/* @var $generator \infinitydevphp\gii\crud\Generator */
 
-$modelClass = StringHelper::basename($generator->modelClass);
-$searchModelClass = StringHelper::basename($generator->searchModelClass);
+$modelClass = StringHelper::basename(ltrim(str_replace('/', '\\', $generator->reallySearchNs), '\\'));
+$searchModelClass = StringHelper::basename($generator->reallySearchNs);
 if ($modelClass === $searchModelClass) {
     $modelAlias = $modelClass . 'Model';
 }
@@ -22,7 +22,7 @@ $searchConditions = $generator->generateSearchConditions();
 echo "<?php\n";
 ?>
 
-namespace <?= StringHelper::dirname(ltrim($generator->searchModelClass, '\\')) ?>;
+namespace <?= StringHelper::dirname(str_replace('/', '\\', ltrim($generator->reallySearchNs, '\\'))) ?>;
 
 use Yii;
 use yii\base\Model;

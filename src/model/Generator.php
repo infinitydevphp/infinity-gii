@@ -232,7 +232,7 @@ class Generator extends ModelGeneratorBase
 
         $rules[] = [['tableName'], 'tableNameValidate', 'skipOnEmpty' => false, 'skipOnError' => false];
         $rules[] = [['behaviorModels'], MultipleModelValidator::className(), 'baseModel' => Behaviors::className()];
-        $rules[] = ['createTable', 'boolean'];
+        $rules[] = [['createTable'], 'boolean'];
         $rules[] = [['tableBuilder', 'customBehaviors'], 'safe'];
 
         return $rules;
@@ -416,9 +416,9 @@ class Generator extends ModelGeneratorBase
     {
         $rules = parent::generateRules($table);
 
-        if ($this->behaviorModels[4]->checked) {
-            if ($this->behaviorModels[4]->phoneAttribute) {
-                $rules[] = "[['{$this->behaviorModels[4]->phoneAttribute}'], 'borales\\extensions\\phoneInput\\PhoneInputValidator']";
+        if ($this->behaviorsType['phone']['checked']) {
+            if ($this->behaviorType['phone']['phoneAttribute']) {
+                $rules[] = "[['{$this->behaviorType['phone']['phoneAttribute']}'], 'borales\\extensions\\phoneInput\\PhoneInputValidator']";
             }
         }
 
