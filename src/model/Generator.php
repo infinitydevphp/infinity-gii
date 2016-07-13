@@ -146,6 +146,9 @@ class Generator extends ModelGeneratorBase
 
                 if (isset($_next['type'])) {
 
+                    if (!isset($this->autoCreateField[$behName])) {
+                        $this->autoCreateField[$behName] = [];
+                    }
                     if (!is_array($this->autoCreateField[$behName])) {
                         $this->autoCreateField[$behName][$_name] = [];
                     }

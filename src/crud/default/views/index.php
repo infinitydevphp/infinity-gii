@@ -33,7 +33,7 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= "<?php echo " ?>Html::a(<?= $generator->generateString('Create {modelClass}', ['modelClass' => Inflector::camel2words($generator->getModelNameForView())]) ?>, ['create'], ['class' => 'btn btn-success']) ?>
     </p>
     <?= "<?php " ?>\yii\widgets\Pjax::begin(['enablePushState' => false,'timeout' => 3000]); ?>
-<?php if ($generator->indexWidgetType === 'grid'): ?>
+<?php if ($generator->indexWidgetType === 'grid') { ?>
     <?= "<?php echo " ?>GridView::widget([
         'dataProvider' => $dataProvider,
         <?= !empty($generator->searchModelClass) ? "'filterModel' => \$searchModel,\n        'columns' => [\n" : "'columns' => [\n"; ?>
@@ -44,7 +44,8 @@ if (sizeof($generator->columns)) {
     echo "            'id',\n";
     foreach ($generator->columns as $column) {
         /** @var $column \infinitydevphp\gii\models\WidgetsCrud */
-        $fieldName = end(explode('.', $column->fieldName));
+        $arrays = explode('.', $column->fieldName);
+        $fieldName = end($arrays);
         if (in_array($fieldName, $previous)) continue;
 
         if (substr_count(strtolower($column->widgetType), 'status') ) {
@@ -99,7 +100,7 @@ if (sizeof($generator->columns)) {
     ]);
     ?>
     <?= "<?php " ?>\yii\widgets\Pjax::end(); ?>
-<?php else: ?>
+<?php } else { ?>
     <?= "<?php echo " ?>ListView::widget([
         'dataProvider' => $dataProvider,
         'itemOptions' => ['class' => 'item'],
@@ -107,6 +108,6 @@ if (sizeof($generator->columns)) {
             return Html::a(Html::encode($model-><?= $nameAttribute ?>), ['view', <?= $urlParams ?>]);
         },
     ]) ?>
-<?php endif; ?>
+<?php } ?>
 
 </div>

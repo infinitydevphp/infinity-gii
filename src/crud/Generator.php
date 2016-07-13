@@ -285,6 +285,7 @@ class Generator extends BaseCrudGenerator
             'timePicker' => [Schema::TYPE_TIME],
             'trevor' => ['patterns' => ['trevor']],
             'statuses' => ['patterns' => ['status']],
+            'select2' => ['patterns' => ['_id']],
             'langSelect' => ['patterns' => ['language']],
             'password' => [
                 'patterns' => ['^(password|pass|passwd|passcode)$']
