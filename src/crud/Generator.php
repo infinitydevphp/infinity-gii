@@ -21,6 +21,7 @@ use yii\helpers\ArrayHelper;
 use yii\helpers\BaseInflector;
 use yii\helpers\Inflector;
 use yii\helpers\VarDumper;
+use yii\web\Controller;
 use yii2mod\gii\crud\Generator as BaseCrudGenerator;
 use \Yii;
 
@@ -118,6 +119,8 @@ class Generator extends BaseCrudGenerator
 
     public $expressions = [];
     public $used = [];
+    public $baseControllerBackendClass='backend\controllers\BackendController';
+    public $baseControllerFrontendClass='frontend\controllers\base\BaseFrontendController';
 
     public $hasUploadBehavior = false;
 
@@ -136,6 +139,7 @@ class Generator extends BaseCrudGenerator
 
     public $reallyControllerNs;
     public $reallySearchNs;
+    public $relationClass;
 
     /**
      * @param ActiveRecord $model
@@ -231,7 +235,9 @@ class Generator extends BaseCrudGenerator
                 $this->isMultilingual = true;
                 $this->languageField = $_next['languageField'];
                 $this->translateAttribute = $_next['attributes'];
-                $class = $_next['langClassName'];
+                $class = ($_next['langClassName']) . ($_next['dynamicLangClass'] ? (isset($_next['langClassSuffix '])
+                        ? $_next['langClassSuffix '] : '') : '');
+                $this->relationClass = $class;
 
                 if (class_exists($class)) {
                     /** @var ActiveRecord $class */
@@ -336,7 +342,13 @@ class Generator extends BaseCrudGenerator
     public function rules()
     {
         return ArrayHelper::merge(parent::rules(), [
-            [['columns'], MultipleModelValidator::className(), 'baseModel' => WidgetsCrud::className(), 'skipOnEmpty' => true]
+            [['columns'], MultipleModelValidator::className(), 'baseModel' => WidgetsCrud::className(), 'skipOnEmpty' => true],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'filter', 'filter' => 'trim'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'required'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'match', 'pattern' => '/^[\w\\\\]*$/', 'message' => 'Only word characters and backslashes are allowed.'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'validateClass', 'params' => ['extends' => Controller::className()]],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'match', 'pattern' => '/Controller$/', 'message' => 'Controller class name must be suffixed with "Controller".'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'match', 'pattern' => '/(^|\\\\)[A-Z][^\\\\]+Controller$/', 'message' => 'Controller class name must start with an uppercase letter.'],
         ]);
     }
 

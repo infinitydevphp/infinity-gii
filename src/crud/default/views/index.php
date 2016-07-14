@@ -97,7 +97,7 @@ if (sizeof($generator->columns)) {
 }
 ?>
             [
-                'header' => 'Action',
+                'header' => Yii::t('backend', 'Action'),
                 'class' => 'yii\grid\ActionColumn',
                 'template' => '{update}{delete}',
             ],

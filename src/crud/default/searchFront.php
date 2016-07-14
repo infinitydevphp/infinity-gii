@@ -2,9 +2,7 @@
 /**
  * This is the template for generating CRUD search class of the specified model.
  */
-
 use yii\helpers\StringHelper;
-
 
 /* @var $this yii\web\View */
 /* @var $generator \infinitydevphp\gii\crud\Generator */
@@ -36,39 +34,15 @@ class <?= $searchModelClass ?> extends <?= isset($modelAlias) ? $modelAlias : $m
 
 {
 <?php
-$previousAttr = [];
     if (count($generator->translateAttribute) && $generator->isMultilingual) {
         $rules[] = "[['" . implode("', '", $generator->translateAttribute) . "'], 'safe']";
         $addAndWhere = [];
         foreach ($generator->translateAttribute as $_next) {
-            $column = explode('.', $_next);
-            /** @var array $column */
-            $column = end($column);
-            if (in_array($column, $previousAttr)) continue;
-            $previousAttr[] = $column;
-            $addAndWhere[] = "translations.{$column} => \$this->{$column},";
+            $addAndWhere[] = "translations.{$_next} => \$this->{$_next},";
 ?>
     public $<?= $_next?>;
 <?php
-    }
-        $anotherColumn = [];
-        foreach ($generator->columns as $column) {
-            /** @var \infinitydevphp\gii\models\WidgetsCrud $column */
-            $column = explode('.', $column->fieldName);
-            /** @var array $column */
-            $column = end($column);
-            if (in_array($column, $previousAttr)) continue;
-
-            $previousAttr[] = $column;
-            $anotherColumn[] = $column;
-            $rules[] = "[['{$column}'], 'safe']";
-
-?>
-    public $<?= $column?>;
-<?php
-
-        }
-}
+    }}
 ?>
     /**
      * @inheritdoc
@@ -88,7 +62,7 @@ $previousAttr = [];
         // bypass scenarios() implementation in the parent class
         return Model::scenarios();
     }
-<?php $relationClass = $generator->relationClass? '\\' . $generator->relationClass : (isset($modelAlias) ? $modelAlias : $modelClass)?>
+<?php $relationClass = $generator->relationClass? : (isset($modelAlias) ? $modelAlias : $modelClass)?>
     /**
      * Creates data provider instance with search query applied
      * @return ActiveDataProvider
@@ -98,16 +72,12 @@ $previousAttr = [];
         $query = self::find();
 
         $query = $query->innerJoinWith(['translations' => function ($q) {
-            /** @var $q yii\db\ActiveQuery */
+            /** @var $q ActiveQuery */
             return $q->from(<?=$relationClass?>::tableName() . ' as translations');
         }]);
 <?php
 if ($generator->isMultilingual) {
     foreach ($generator->translateAttribute as $item) {
-        $searchConditions[] = "\$query = \$query->andFilterWhere(['translations.{$item}' => \$this->{$item}]);";
-    }
-
-    foreach ($anotherColumn as $item) {
         $searchConditions[] = "\$query = \$query->andFilterWhere(['translations.{$item}' => \$this->{$item}]);";
     }
 ?>
