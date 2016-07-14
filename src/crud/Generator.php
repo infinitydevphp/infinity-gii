@@ -140,6 +140,7 @@ class Generator extends BaseCrudGenerator
     public $reallyControllerNs;
     public $reallySearchNs;
     public $relationClass;
+    public $relationField;
 
     /**
      * @param ActiveRecord $model
@@ -235,6 +236,7 @@ class Generator extends BaseCrudGenerator
                 $this->isMultilingual = true;
                 $this->languageField = $_next['languageField'];
                 $this->translateAttribute = $_next['attributes'];
+                $this->relationField = $_next['langForeignKey'];
                 $class = ($_next['langClassName']) . ($_next['dynamicLangClass'] ? (isset($_next['langClassSuffix '])
                         ? $_next['langClassSuffix '] : '') : '');
                 $this->relationClass = $class;

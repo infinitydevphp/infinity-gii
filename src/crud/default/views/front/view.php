@@ -14,7 +14,6 @@ use yii\helpers\Url;
 use yii\helpers\Html;
 
 ?>
-<div>
 <?php
  $attr = [];
 foreach ($generator->columns as $column) {

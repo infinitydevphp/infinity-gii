@@ -28,6 +28,7 @@ use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use <?= ltrim($generator->modelClass, '\\') . (isset($modelAlias) ? " as $modelAlias" : "") ?>;
+use yii\db\ActiveQuery;
 
 /**
  * <?= $searchModelClass ?> represents the model behind the search form about `<?= $generator->modelClass ?>`.
@@ -37,10 +38,12 @@ class <?= $searchModelClass ?> extends <?= isset($modelAlias) ? $modelAlias : $m
 {
 <?php
 $previousAttr = [];
+    $attrTranslate = $generator->translateAttribute;
+    $attrTranslate[] = $generator->relationField;
     if (count($generator->translateAttribute) && $generator->isMultilingual) {
-        $rules[] = "[['" . implode("', '", $generator->translateAttribute) . "'], 'safe']";
+        $rules[] = "[['" . implode("', '", $attrTranslate) . "'], 'safe']";
         $addAndWhere = [];
-        foreach ($generator->translateAttribute as $_next) {
+        foreach ($attrTranslate as $_next) {
             $column = explode('.', $_next);
             /** @var array $column */
             $column = end($column);
@@ -95,6 +98,7 @@ $previousAttr = [];
      */
     public function search($params)
     {
+        /** @var $query ActiveQuery */
         $query = self::find();
 
         $query = $query->innerJoinWith(['translations' => function ($q) {
@@ -103,11 +107,11 @@ $previousAttr = [];
         }]);
 <?php
 if ($generator->isMultilingual) {
-    foreach ($generator->translateAttribute as $item) {
+    foreach ($attrTranslate as $item) {
         $searchConditions[] = "\$query = \$query->andFilterWhere(['translations.{$item}' => \$this->{$item}]);";
     }
 
-    foreach ($anotherColumn as $item) {
+        foreach ($anotherColumn as $item) {
         $searchConditions[] = "\$query = \$query->andFilterWhere(['translations.{$item}' => \$this->{$item}]);";
     }
 ?>
@@ -121,6 +125,16 @@ if ($generator->isMultilingual) {
             'query' => $query,
         ]);
 
+<?php if ($generator->isMultilingual) {
+    foreach ($attrTranslate as $item) {
+?>
+        $dataProvider->sort->attributes['<?= $item?>'] = [
+            'asc' => ['translations.<?= $item ?>' => SORT_ASC],
+            'desc' => ['translations.<?= $item ?>' => SORT_DESC],
+        ];
+<?php
+    }
+}?>
         if (!($this->load($params) && $this->validate())) {
             return $dataProvider;
         }
