@@ -1,3 +1,3 @@
 $form->field($model, {field})->textarea([
-    'rows' => 5
-]);
+        'rows' => 5
+    ]);

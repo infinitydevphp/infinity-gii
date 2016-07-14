@@ -69,6 +69,7 @@ class Generator extends BaseGenerator
             'type' => Schema::TYPE_STRING,
             'length' => 50,
             'is_not_null' => true,
+            'comment' => 'Language',
         ]);
     }
 
@@ -121,8 +122,7 @@ class Generator extends BaseGenerator
                     $this->{$attr} = $value;
                 }
             }
-//            var_dump($this->translateModel->translateGenerator);
-//            exit;
+
             $result = $this->baseModel->validate();
 
             if (!$result) {
@@ -263,8 +263,6 @@ class Generator extends BaseGenerator
             foreach ($trans->attributesLang as &$item) {
                 $item = trim($item);
             }
-
-            var_dump($trans->attributesLang);
         }
 
         $files = ArrayHelper::merge(

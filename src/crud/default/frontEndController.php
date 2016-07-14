@@ -30,32 +30,23 @@ echo "<?php\n";
 namespace <?= StringHelper::dirname(str_replace('/', '\\', ltrim($generator->reallyControllerNs, '\\'))) ?>;
 
 use Yii;
-<?php
-$attribute = '';
-if ($attribute = $generator->hasUploadBehavior) {
-    ?>
-use trntv\filekit\actions\DeleteAction;
-use trntv\filekit\actions\UploadAction;
-<?php
-}
-?>
 use <?= ltrim($generator->modelClass, '\\') ?>;
 <?php if (!empty($generator->searchModelClass)): ?>
 use <?= ltrim(str_replace('/', '\\', $generator->reallySearchNs), '\\') . (isset($searchModelAlias) ? " as $searchModelAlias" : "") ?>;
 <?php else: ?>
 use yii\data\ActiveDataProvider;
 <?php endif; ?>
-use <?= ltrim($generator->baseControllerClass, '\\') ?>;
+use <?= ltrim($generator->baseControllerFrontendClass, '\\') ?>;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
 
 /**
  * <?= $controllerClass ?> implements the CRUD actions for <?= $modelClass ?> model.
+<?= $generator->isMultilingual ? ' * @property string $language' : ' *';?>
  */
-class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerClass) . "\n" ?>
+class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerFrontendClass) . "\n" ?>
 {
-    public $deleteFromDB = false;
 <?php if ($generator->isMultilingual) { ?>
     public $languageParam = 'lang';
     public $defaultLanguage = 'ru-RU';
@@ -83,20 +74,6 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
         ];
     }
 
-    public function actions() {
-        return ArrayHelper::merge(parent::actions(), [
-<?php   if ($attribute) { ?>
-                '<?=$attribute?>-upload' => [
-                    'class' => UploadAction::className(),
-                    'deleteRoute' => '<?=$attribute?>-delete',
-                ],
-                    '<?=$attribute?>-delete' => [
-                    'class' => DeleteAction::className()
-                ]
-<?php } ?>
-        ]);
-    }
-
     /**
      * Lists all <?= $modelClass ?> models.
      * @return mixed
@@ -105,81 +82,27 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
     {
 <?php if (!empty($generator->searchModelClass)): ?>
         $searchModel = new <?= isset($searchModelAlias) ? $searchModelAlias : $searchModelClass ?>();
+<?php if ($generator->isMultilingual) { ?>
+        $searchModel-><?=$generator->languageField?> = $this->language;
+<?php    }
+?>
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-        ]);
 <?php else: ?>
         $dataProvider = new ActiveDataProvider([
             'query' => <?= $modelClass ?>::find(),
         ]);
 
+<?php endif; ?>
         return $this->render('index', [
             'dataProvider' => $dataProvider,
         ]);
-<?php endif; ?>
     }
 
-    /**
-     * Creates a new <?= $modelClass ?> model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return mixed
-     */
-    public function actionCreate()
-    {
-        $model = new <?= $modelClass ?>();
-
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', '<?= \yii\helpers\Inflector::camel2words($generator->getModelNameForView()); ?> has been created.');
-            return $this->redirect(['index']);
-        }
-
-        return $this->render('create', [
-            'model' => $model,
+    public function actionView($slug) {
+        return $this->render('view', [
+            'model' => $this->findModel($slug),
         ]);
-
-    }
-
-    /**
-     * Updates an existing <?= $modelClass ?> model.
-     * If update is successful, the browser will be redirected to the 'view' page.
-     * <?= implode("\n     * ", $actionParamComments) . "\n" ?>
-     * @return mixed
-     */
-    public function actionUpdate(<?= $actionParams ?>)
-    {
-        $model = $this->findModel(<?= $actionParams ?>);
-
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', '<?= \yii\helpers\Inflector::camel2words($generator->getModelNameForView()); ?> has been saved.');
-            return $this->redirect(['index']);
-        }
-
-        return $this->render('update', [
-            'model' => $model,
-        ]);
-
-    }
-
-    /**
-     * Deletes an existing <?= $modelClass ?> model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * <?= implode("\n     * ", $actionParamComments) . "\n" ?>
-     * @return mixed
-     */
-    public function actionDelete(<?= $actionParams ?>)
-    {
-        if ($this->deleteFromDB) {
-            $this->findModel(<?= $actionParams ?>)->delete();
-        } else {
-            $model = $this->findModel(<?= $actionParams ?>);
-            $model->status = <?= $modelClass ?>::STATUS_DRAFT;
-            $model->update();
-        }
-        Yii::$app->session->setFlash('success', '<?= \yii\helpers\Inflector::camel2words($generator->getModelNameForView()); ?> has been deleted.');
-        return $this->redirect(['index']);
     }
 
     /**
@@ -197,11 +120,11 @@ if (count($pks) === 1 && !$generator->isMultilingual) {
     $condition = '$id';
 } else {
 ?>
-        $model = $model->joinWith(['translations']);
+        <?php //$model = $model->joinWith(['translations']); ?>
 <?php
     $condition = [];
     foreach ($pks as $pk) {
-        $condition[] = "'$pk' => \$$pk";
+        $condition = ["'$pk' => \$$pk"];
     }
     $condition = '$condition = [' . implode(', ', $condition) . '];';
 ?>
@@ -209,19 +132,20 @@ if (count($pks) === 1 && !$generator->isMultilingual) {
 <?php
     if ($generator->isMultilingual) {
         $condition = 'if ($this->' . $generator->languageField . ') {' . PHP_EOL;
-        $condition.= '            $condition[] = [\'translations.' . $generator->languageField . '\' => $this->getLanguage()];' . PHP_EOL;
+        $condition.= '            $condition[\'translations.' . $generator->languageField . '\'] = $this->getLanguage();' . PHP_EOL;
         $condition.= '        }' . PHP_EOL;
 ?>
-        <?= $condition; ?>
+<?php //$condition; ?>
 <?php }
 }
 ?>
         if (($model = $model->andWhere($condition)->one()) !== null) {
             return $model;
         } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
+            throw new NotFoundHttpException(Yii::t('frontend', 'The requested page does not exist.'));
         }
     }
+
 <?php if ($generator->isMultilingual) { ?>
     public function getLanguage($default=null) {
         return Yii::$app->request->get($this->languageParam,

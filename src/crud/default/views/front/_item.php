@@ -2,21 +2,20 @@
 /**
  * @var $generator \infinitydevphp\gii\crud\Generator
  */
-echo "<?php\n";
+echo '<?php' . PHP_EOL;
 ?>
 /**
  * @var integer $index
  * @var integer $key
- * @var <?=$generator->modelClass;?> $model
+ * @var \common\modules\service\models\Services $model
  */
 
 use yii\helpers\Url;
 use yii\helpers\Html;
 
 ?>
-<div>
 <?php
- $attr = [];
+$attr = [];
 foreach ($generator->columns as $column) {
     /** @var $column \infinitydevphp\gii\models\WidgetsCrud */
     $column = explode('.', $column->fieldName);
@@ -25,9 +24,13 @@ foreach ($generator->columns as $column) {
         continue;
     }
     $attr[] = $column;
-?>
+    ?>
 <div>
     <?='<?=$model->' . $column . '?>' . PHP_EOL;?>
 </div>
-<?php
+    <?php
 }?>
+
+<div>
+    <?='<?=Html::a(Yii::t(\'frontend\', \'More\'), Url::to([\'/services/services/view?slug=\' . $model->slug]))?>'.PHP_EOL ?>
+</div>

@@ -50,14 +50,14 @@ if (count($generator->columns)) {
         /** @var $column \infinitydevphp\gii\models\WidgetsCrud */
         $arrays = explode('.', $column->fieldName);
         $field = end($arrays);
-        echo "    <?php echo " . str_replace(['{field}', '{model}'], [$field, '$model'], $generator->generateWidgetActiveField($column)) . " ?>\n\n";
+        echo "    <?php \n    echo " . str_replace(['{field}', '{model}'], ['\'' . $field . '\'', '$model'], $generator->generateWidgetActiveField($column)) . " \n    ?>\n\n";
     }
 } else {
 foreach ($safeAttributes as $attribute) {
     echo "    <?php echo " . $generator->generateActiveField($attribute) . " ?>\n\n";
 }} ?>
     <div class="form-group">
-        <?= "<?php echo " ?>Html::submitButton($model->isNewRecord ? <?= $generator->generateString('Create') ?> : <?= $generator->generateString('Update') ?>, ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
+        <?= "<?php \n echo " ?>Html::submitButton($model->isNewRecord ? <?= $generator->generateString('Create') ?> : <?= $generator->generateString('Update') ?>, ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) <?= "\n" ?> ?>
     </div>
 
     <?= "<?php " ?>ActiveForm::end(); ?>

@@ -45,7 +45,7 @@ use <?= ltrim(str_replace('/', '\\', $generator->reallySearchNs), '\\') . (isset
 <?php else: ?>
 use yii\data\ActiveDataProvider;
 <?php endif; ?>
-use <?= ltrim($generator->baseControllerClass, '\\') ?>;
+use <?= ltrim($generator->baseControllerBackendClass, '\\') ?>;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
@@ -53,7 +53,7 @@ use yii\helpers\ArrayHelper;
 /**
  * <?= $controllerClass ?> implements the CRUD actions for <?= $modelClass ?> model.
  */
-class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerClass) . "\n" ?>
+class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerBackendClass) . "\n" ?>
 {
     public $deleteFromDB = false;
 <?php if ($generator->isMultilingual) { ?>
@@ -85,14 +85,20 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 
     public function actions() {
         return ArrayHelper::merge(parent::actions(), [
-<?php   if ($attribute) { ?>
-                '<?=$attribute?>-upload' => [
+<?php   if ($attribute) {
+    foreach ($attribute['attributes'] as $attr) {
+        $attr = explode('.', $attr);
+        $attr = end($attr);
+?>
+                '<?=$attr?>-upload' => [
                     'class' => UploadAction::className(),
-                    'deleteRoute' => '<?=$attribute?>-delete',
+                    'deleteRoute' => '<?=$attr?>-delete',
                 ],
-                    '<?=$attribute?>-delete' => [
+                    '<?=$attr?>-delete' => [
                     'class' => DeleteAction::className()
                 ]
+<?php
+}?>
 <?php } ?>
         ]);
     }
@@ -171,10 +177,14 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
      */
     public function actionDelete(<?= $actionParams ?>)
     {
+<?php $actionParams = explode(',', $actionParams);
+        foreach ($actionParams as $actionParam) { $actionParam = trim($actionParam);?>
+        <?=$actionParam?> = <?=$actionParam?> ? : Yii::$app->request->get('<?=$actionParam?>');
+<?php } ?>
         if ($this->deleteFromDB) {
-            $this->findModel(<?= $actionParams ?>)->delete();
+            $this->findModel(<?= implode(',', $actionParams) ?>)->delete();
         } else {
-            $model = $this->findModel(<?= $actionParams ?>);
+            $model = $this->findModel(<?= implode(',', $actionParams) ?>);
             $model->status = <?= $modelClass ?>::STATUS_DRAFT;
             $model->update();
         }
@@ -189,7 +199,7 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
      * @return <?=                   $modelClass ?> the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
-    protected function findModel(<?= $actionParams ?>)
+    protected function findModel(<?= implode(',', $actionParams) ?>)
     {
         $model = <?= $modelClass ?>::find();
 <?php
@@ -197,22 +207,22 @@ if (count($pks) === 1 && !$generator->isMultilingual) {
     $condition = '$id';
 } else {
 ?>
-        $model = $model->joinWith(['translations']);
+        <?php //$model = $model->joinWith(['translations']); ?>
 <?php
     $condition = [];
     foreach ($pks as $pk) {
-        $condition[] = "'$pk' => \$$pk";
+        $condition = ["'$pk' => \$$pk"];
     }
     $condition = '$condition = [' . implode(', ', $condition) . '];';
 ?>
         <?= $condition . PHP_EOL; ?>
 <?php
     if ($generator->isMultilingual) {
-        $condition = 'if ($this->' . $generator->languageField . ') {' . PHP_EOL;
-        $condition.= '            $condition[] = [\'translations.' . $generator->languageField . '\' => $this->getLanguage()];' . PHP_EOL;
-        $condition.= '        }' . PHP_EOL;
+//        $condition = 'if ($this->' . $generator->languageField . ') {' . PHP_EOL;
+//        $condition.= '            $condition[] = [\'translations.' . $generator->languageField . '\' => $this->getLanguage()];' . PHP_EOL;
+//        $condition.= '        }' . PHP_EOL;
 ?>
-        <?= $condition; ?>
+<?php //$condition; ?>
 <?php }
 }
 ?>
@@ -222,6 +232,7 @@ if (count($pks) === 1 && !$generator->isMultilingual) {
             throw new NotFoundHttpException('The requested page does not exist.');
         }
     }
+
 <?php if ($generator->isMultilingual) { ?>
     public function getLanguage($default=null) {
         return Yii::$app->request->get($this->languageParam,

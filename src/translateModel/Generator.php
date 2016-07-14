@@ -36,20 +36,7 @@ class Generator extends BaseGenerator
         parent::init();
         $this->baseModel = new BaseModelGenerator([
             'additionName' => 'Generator[baseModel]',
-            'createForm' => false,
-            /*'customBehaviors' => [
-                'trans' => [
-                    'checked' => true,
-                    'title' => 'Multilanguage behavior',
-                    'languageField' => $this->languageField ?: 'language',
-                    'dynamicLangClass' => '',
-                    'requireTranslations' => false,
-                    'abridge' => false,
-                    'class' => MultilingualBehavior::className(),
-                    'langClassName' => '',
-                    'languages' => null,
-                ]
-            ],*/
+            'createForm' => false
         ]);
         $this->translateModel = new BaseModelGenerator([
             'additionName' => 'Generator[translateModel]',
@@ -61,6 +48,7 @@ class Generator extends BaseGenerator
             'type' => Schema::TYPE_STRING,
             'length' => 50,
             'is_not_null' => true,
+            'comment' => 'Language',
         ]);
     }
 

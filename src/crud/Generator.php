@@ -21,6 +21,7 @@ use yii\helpers\ArrayHelper;
 use yii\helpers\BaseInflector;
 use yii\helpers\Inflector;
 use yii\helpers\VarDumper;
+use yii\web\Controller;
 use yii2mod\gii\crud\Generator as BaseCrudGenerator;
 use \Yii;
 
@@ -118,6 +119,8 @@ class Generator extends BaseCrudGenerator
 
     public $expressions = [];
     public $used = [];
+    public $baseControllerBackendClass='backend\controllers\BackendController';
+    public $baseControllerFrontendClass='frontend\controllers\base\BaseFrontendController';
 
     public $hasUploadBehavior = false;
 
@@ -136,6 +139,7 @@ class Generator extends BaseCrudGenerator
 
     public $reallyControllerNs;
     public $reallySearchNs;
+    public $relationClass;
 
     /**
      * @param ActiveRecord $model
@@ -179,8 +183,7 @@ class Generator extends BaseCrudGenerator
                 } else {
                     $this->fieldExclude[] = $addition.'created_by';
                 }
-            }
-            if ($_next['class'] === TimestampBehavior::className()) {
+            } else if ($_next['class'] === TimestampBehavior::className()) {
                 if (isset($_next['updatedAtAttribute'])) {
                     if (!empty($_next['updatedAtAttribute'])) {
                         $this->fieldExclude[] = $addition.$_next['updatedAtAttribute'];
@@ -195,17 +198,22 @@ class Generator extends BaseCrudGenerator
                 } else {
                     $this->fieldExclude[] = $addition.'created_at';
                 }
-            }
-            if ($_next['class'] === PhoneInputBehavior::className()) {
+            } else if ($_next['class'] === PhoneInputBehavior::className()) {
                 if (!$this->searchColumn($_next['phoneAttribute'])) {
                     $this->columns[] = new WidgetsCrud([
                         'fieldName' => $_next['phoneAttribute'],
                         'widgetType' => 'phone'
                     ]);
                 }
-            }
-            if ($_next['class'] === UploadBehavior::className()) {
-                $this->hasUploadBehavior = isset($_next['attribute']) ? $_next['attribute'] : $_next['attribute'];
+            } else if ($_next['class'] === UploadBehavior::className()) {
+                if (!is_array($this->hasUploadBehavior)) {
+                    $this->hasUploadBehavior = [
+                        'attributes' => []
+                    ];
+                }
+                $this->hasUploadBehavior['attributes'][] = isset($_next['attribute']) ? $_next['attribute'] : $_next['attribute'];
+                $this->hasUploadBehavior[] = $_next['pathAttribute'];
+                $this->hasUploadBehavior[] = $_next['baseUrlAttribute'];
 
                 $this->fieldExclude[] = $addition.$_next['pathAttribute'];
                 $this->fieldExclude[] = $addition.$_next['baseUrlAttribute'];
@@ -223,13 +231,13 @@ class Generator extends BaseCrudGenerator
                 }
 
                 $this->used = ArrayHelper::merge($this->used, $uses);
-            }
-
-            if ($_next['class'] === MultilingualBehavior::className()) {
+            } else if ($_next['class'] === MultilingualBehavior::className()) {
                 $this->isMultilingual = true;
                 $this->languageField = $_next['languageField'];
                 $this->translateAttribute = $_next['attributes'];
-                $class = $_next['langClassName'];
+                $class = ($_next['langClassName']) . ($_next['dynamicLangClass'] ? (isset($_next['langClassSuffix '])
+                        ? $_next['langClassSuffix '] : '') : '');
+                $this->relationClass = $class;
 
                 if (class_exists($class)) {
                     /** @var ActiveRecord $class */
@@ -279,7 +287,12 @@ class Generator extends BaseCrudGenerator
             'tinyMce' => [Schema::TYPE_TEXT],
             'uploadInput' => ['hasBehaviorClassName' => 'upload', 'after' => function (&$generator, $attribute) {
                 /** @var $generator Generator */
-                $generator->hasUploadBehavior = $attribute;
+                if (!is_array($this->hasUploadBehavior)) {
+                    $this->hasUploadBehavior = [
+                        'attributes' => [],
+                    ];
+                }
+                $generator->hasUploadBehavior['attributes'][] = $attribute;
             }, 'patterns' => ['(photo|img|image|avatar)']],
             'datePicker' => [Schema::TYPE_DATE, Schema::TYPE_DATETIME, Schema::TYPE_TIMESTAMP],
             'timePicker' => [Schema::TYPE_TIME],
@@ -329,7 +342,13 @@ class Generator extends BaseCrudGenerator
     public function rules()
     {
         return ArrayHelper::merge(parent::rules(), [
-            [['columns'], MultipleModelValidator::className(), 'baseModel' => WidgetsCrud::className(), 'skipOnEmpty' => true]
+            [['columns'], MultipleModelValidator::className(), 'baseModel' => WidgetsCrud::className(), 'skipOnEmpty' => true],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'filter', 'filter' => 'trim'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'required'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'match', 'pattern' => '/^[\w\\\\]*$/', 'message' => 'Only word characters and backslashes are allowed.'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'validateClass', 'params' => ['extends' => Controller::className()]],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'match', 'pattern' => '/Controller$/', 'message' => 'Controller class name must be suffixed with "Controller".'],
+            [['baseControllerFrontendClass', 'baseControllerBackendClass'], 'match', 'pattern' => '/(^|\\\\)[A-Z][^\\\\]+Controller$/', 'message' => 'Controller class name must start with an uppercase letter.'],
         ]);
     }
 
@@ -395,7 +414,14 @@ class Generator extends BaseCrudGenerator
         foreach ($this->columns as $column) {
             /** @var $column WidgetsCrud */
             if ($column->widgetType == 'upload') {
-                $this->hasUploadBehavior = $column->fieldName;
+                if (!is_array($this->hasUploadBehavior)) {
+                    $this->hasUploadBehavior = [
+                        'attributes' => [
+
+                        ],
+                    ];
+                }
+                $this->hasUploadBehavior['attributes'][] = $column->fieldName;
             }
         }
     }
@@ -465,14 +491,16 @@ class Generator extends BaseCrudGenerator
         $controllerFile = Yii::getAlias('@' . str_replace('\\', '/', $this->reallyControllerNs) . '.php');
         $files[] = new CodeFile($controllerFile, $this->render('controller.php'));
 
-        $viewPath = $this->getViewPath();
+        $viewPath = explode('controllers', $controllerFile);
+        $viewPath = $viewPath[0] . 'views/';
         $templatePath = $this->getTemplatePath() . '/views';
         foreach (scandir($templatePath) as $file) {
             if (empty($this->searchModelClass) && $file === '_search.php') {
                 continue;
             }
+
             if (is_file($templatePath . '/' . $file) && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
-                $files[] = new CodeFile("$viewPath/backend/$file", $this->render("views/$file"));
+                $files[] = new CodeFile("{$viewPath}backend/" . $this->getControllerID() . "/$file", $this->render("views/$file"));
             }
         }
 
@@ -492,7 +520,7 @@ class Generator extends BaseCrudGenerator
                 continue;
             }
             if (is_file($templatePath . '/front/' . $file) && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
-                $files[] = new CodeFile("$viewPath/$file", $this->render("views/front/$file"));
+                $files[] = new CodeFile("$viewPath" . $this->getControllerID() . "/$file", $this->render("views/front/$file"));
             }
         }
 

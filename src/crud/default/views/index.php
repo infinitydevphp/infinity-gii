@@ -48,7 +48,12 @@ if (sizeof($generator->columns)) {
         $fieldName = end($arrays);
         if (in_array($fieldName, $previous)) continue;
 
-        if (substr_count(strtolower($column->widgetType), 'status') ) {
+        if (substr_count(strtolower($column->widgetType), 'langselect') ) {
+            echo "            [\n";
+            echo "              'attribute' => '" . $fieldName . "',\n";
+            echo "              'filter' => is_array(Yii::\$app->params['availableLocales']) ? Yii::\$app->params['availableLocales'] : [],\n";
+            echo "            ],\n";
+        } else if (substr_count(strtolower($column->widgetType), 'status') ) {
             echo "            [\n";
             echo "              'attribute' => '" . $fieldName . "',\n";
             echo "              'filter' => \$searchModel::getStatuses(),\n";
@@ -63,8 +68,8 @@ if (sizeof($generator->columns)) {
             echo "              'attribute' => '" . $fieldName . "',\n";
             echo "              'format' => 'raw',\n";
             echo "              'filter' => false,\n";
-            echo "              'value' => function (\$model, \$key, \$index) {,\n";
-            echo "                  return '<img src=\"' . \$model->getPreview" . ucfirst(mb_strtolower($fieldName)) . "() . '\" width=\"100\"/>',\n";
+            echo "              'value' => function (\$model, \$key, \$index) {\n";
+            echo "                  return '<img src=\"' . \$model->getPreview" . ucfirst(mb_strtolower($fieldName)) . "() . '\" width=\"100\"/>';\n";
             echo "              },\n";
             echo "            ],\n";
         } else {
@@ -92,7 +97,7 @@ if (sizeof($generator->columns)) {
 }
 ?>
             [
-                'header' => 'Action',
+                'header' => Yii::t('backend', 'Action'),
                 'class' => 'yii\grid\ActionColumn',
                 'template' => '{update}{delete}',
             ],
