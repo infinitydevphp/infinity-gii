@@ -48,6 +48,7 @@ class Generator extends BaseGenerator
             'type' => Schema::TYPE_STRING,
             'length' => 50,
             'is_not_null' => true,
+            'comment' => 'Language',
         ]);
     }
 

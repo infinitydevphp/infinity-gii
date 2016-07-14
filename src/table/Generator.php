@@ -46,7 +46,7 @@ class Generator extends GeneratorBase
                 'type' => Schema::TYPE_SMALLINT,
                 'default' => 1,
                 'is_not_null' => true,
-                'comment' => 'ID'
+                'comment' => 'Status'
             ])];
         }
         $this->tablesList = Yii::$app->db->schema->tableNames;
@@ -104,6 +104,7 @@ class Generator extends GeneratorBase
             $tableGenerator = new TableBuilder([
                 'tableName' => $tableName,
                 'fields' => $this->fields,
+                'useTablePrefix' => $this->useTablePrefix,
                 'dropOriginTable' => $this->dropIfExists
             ]);
             $tableGenerator->runQuery(true);
@@ -113,7 +114,8 @@ class Generator extends GeneratorBase
             $this->migrationName = Yii::$app->session->get($this->tableName) ?: false;
             $mCreate = new TableBuilderTemplateMigration([
                 'tableName' => $tableName,
-                'fields' => $this->fields
+                'fields' => $this->fields,
+                'useTablePrefix' => $this->useTablePrefix
             ]);
             if (!$this->migrationName) {
                 Yii::$app->session->set($this->tableName, $mCreate->migrationName);

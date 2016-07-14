@@ -47,7 +47,8 @@ class Generator extends GeneratorBase
         $this->originTable->fields = $this->translateTable->fields = [
             new Field([
                 'name' => $this->originTable->primaryKeyName,
-                'type' => Schema::TYPE_PK
+                'type' => Schema::TYPE_PK,
+                'comment' => 'ID'
             ])
         ];
 
@@ -55,7 +56,8 @@ class Generator extends GeneratorBase
             'name' => $this->langFieldName,
             'type' => Schema::TYPE_STRING,
             'length' => 10,
-            'default' => $this->defaultLanguage
+            'default' => $this->defaultLanguage,
+            'comment' => 'Language'
         ]);
     }
 
