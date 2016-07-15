@@ -95,12 +95,14 @@ class Generator extends ModelGeneratorBase
                 'title' => 'Timestamp behavior',
                 'createdAtAttribute' => [
                     'name' => 'created_at',
-                    'type' => Schema::TYPE_TIMESTAMP,
+                    'type' => Schema::TYPE_INTEGER,
+                    'length' => 20,
                     'comment' => 'Created At',
                 ],
                 'updatedAtAttribute' => [
                     'name' => 'updated_at',
-                    'type' => Schema::TYPE_TIMESTAMP,
+                    'type' => Schema::TYPE_INTEGER,
+                    'length' => 20,
                     'comment' => 'Updated At',
                 ],
                 'class' => TimestampBehavior::className()
@@ -173,7 +175,7 @@ class Generator extends ModelGeneratorBase
                     }
 
                     $this->autoCreateField[$behName][$_name] = new Field(array_merge($_next, [
-                        'name' => $_name
+                        'name' => $_name,
                     ]));
                     $_next = $_next['name'];
                 } else {
