@@ -42,7 +42,8 @@ use <?= $item.';' . PHP_EOL;?>
     if (count($publicAttributes)) {
     foreach ($publicAttributes as $item) {
 ?>
- * @property <?= $item ?>
+ * @property $<?= $item ?>
+
 <?php
     }}
     if (count($attributes)) {
@@ -82,7 +83,7 @@ class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . 
     foreach ($publicAttributes as $item) {
         ?>
 
-    public <?= $item ?>;
+    public $<?= $item ?>;
 
 <?php
     }}
