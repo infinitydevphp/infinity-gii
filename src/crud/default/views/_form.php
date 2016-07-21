@@ -50,7 +50,8 @@ if (count($generator->columns)) {
         /** @var $column \infinitydevphp\gii\models\WidgetsCrud */
         $arrays = explode('.', $column->fieldName);
         $field = end($arrays);
-        echo "    <?php \n    echo " . str_replace(['{field}', '{model}'], ['\'' . $field . '\'', '$model'], $generator->generateWidgetActiveField($column)) . " \n    ?>\n\n";
+        echo "    <?php \n    echo " . str_replace(['{field}', '{model}', '{field_action}'],
+                ['\'' . $field . '\'', '$model', $field], $generator->generateWidgetActiveField($column)) . " \n    ?>\n\n";
     }
 } else {
 foreach ($safeAttributes as $attribute) {
