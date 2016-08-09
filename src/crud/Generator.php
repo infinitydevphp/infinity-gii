@@ -261,6 +261,8 @@ class Generator extends BaseCrudGenerator
             '' => 'Not set',
             'ckEditor' => 'CK Editor Widget',
             'statuses' => 'Status change input',
+            'number' => 'Number input',
+            'email' => 'Email input',
             'color' => 'Color Input Widget',
             'datePicker' => 'Date picker Widget',
             'dateRange2FieldPicker' => 'Range Date picker Widget',
@@ -304,6 +306,12 @@ class Generator extends BaseCrudGenerator
             'langSelect' => ['patterns' => ['language']],
             'password' => [
                 'patterns' => ['^(password|pass|passwd|passcode)$']
+            ],
+            'email' => [
+                'patterns' => ['email']
+            ],
+            'number' => [
+                Schema::TYPE_INTEGER, Schema::TYPE_BIGINT, Schema::TYPE_SMALLINT
             ],
         ];
 

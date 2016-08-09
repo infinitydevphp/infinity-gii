@@ -1,5 +1,5 @@
 <?php
-namespace infinitydevphp\gii\table;
+namespace infinitydevphp\gii\migration;
 
 use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
 use infinitydevphp\tableBuilder\TableBuilder;
@@ -7,6 +7,7 @@ use infinitydevphp\tableBuilder\TableBuilderTemplateMigration;
 use infinitydevphp\gii\models\Field;
 use yii\db\ColumnSchema;
 use yii\db\Schema;
+use yii\db\TableSchema;
 use yii\gii\CodeFile;
 use yii\helpers\ArrayHelper;
 use yii\gii\Generator as GeneratorBase;
@@ -18,39 +19,13 @@ class Generator extends GeneratorBase
     public $db = 'db';
     public $fields = [];
     public $tableName;
-    public $createMigration = true;
     public $migrationPath = '@common/migrations/db';
-    public $autoCreateTable = true;
-    public $primaryKeyName = 'id';
-    public $migrationCreate = true;
     public $fileName = '';
     public $migrationName = '';
-    public $dropIfExists = true;
-    public $tableNameRequired = true;
     public $useTablePrefix = true;
-    public $forceTableCreate = false;
-
-    protected $tablesList;
-    public $enableI18N = true;
 
     public function init()
     {
-        if (!sizeof($this->fields)) {
-            $this->fields = [new Field([
-                'name' => $this->primaryKeyName,
-                'type' => Schema::TYPE_PK,
-                'is_not_null' => true,
-                'comment' => 'ID'
-            ]),
-            new Field([
-                'name' => 'status',
-                'type' => Schema::TYPE_SMALLINT,
-                'default' => 1,
-                'is_not_null' => true,
-                'comment' => 'Status'
-            ])];
-        }
-        $this->tablesList = Yii::$app->db->schema->tableNames;
         parent::init();
     }
 
@@ -69,18 +44,12 @@ class Generator extends GeneratorBase
     {
         $rules = ArrayHelper::merge(parent::rules(), [
 //            [['tableName'], RangeValidator::className(), 'not' => true, 'range' => $this->tablesList, 'message' => 'Table name exists'],
+            [['tableName'], 'required'],
             [['tableName'], 'match', 'pattern' => '/^(\w+\.)?([\w\*]+)$/', 'message' => 'Only word characters, and optionally an asterisk and/or a dot are allowed.'],
             [['fields'], MultipleModelValidator::className(), 'baseModel' => Field::className()],
-            [['autoCreateTable', 'useTablePrefix', 'tableNameRequired', 'dropIfExists'], 'boolean'],
-            [['migrationPath', 'migrationCreate', 'migrationName'], 'safe'],
-            [['primaryKeyName', 'fileName'], 'string', 'max' => 20],
-            [['fields'], 'default', 'value' => [new Field(['type' => Schema::TYPE_PK, 'name' => $this->primaryKeyName])]],
-            [['fields'], 'safe']
+            [['useTablePrefix'], 'boolean'],
+            [['migrationPath', 'migrationName'], 'safe'],
         ]);
-
-        if ($this->tableNameRequired || $this->autoCreateTable) {
-            $rules[] = ['tableName', 'required'];
-        }
 
         return $rules;
     }
@@ -92,13 +61,17 @@ class Generator extends GeneratorBase
         ]);
     }
 
+
     protected function getTableFields() {
         if (sizeof($this->fields) > 1)
             return;
+        $pks = [];
+
 
         $table = Yii::$app->db->schema->getTableSchema($this->tableName);
 
         if ($table && $columns = $table->columns) {
+            $pks = $table->primaryKey;
             /** @var ColumnSchema[] $columns */
             $this->fields = [];
             foreach ($columns as $name => $column) {
@@ -109,10 +82,13 @@ class Generator extends GeneratorBase
                     'precision' => $column->precision,
                     'scale' => $column->scale,
                     'comment' => $column->comment,
-                    'is_not_null' => !$column->allowNull
+                    'is_not_null' => !$column->allowNull,
+                    'isCompositeKey' => in_array($name, $pks),
                 ]);
             }
         }
+
+        return $pks;
     }
 
     public function generate()
@@ -123,43 +99,31 @@ class Generator extends GeneratorBase
             $tableName = "{{%{$tableName}}}";
         }
 
-        $this->getTableFields();
+        $primary = $this->getTableFields();
 
-        if (($this->autoCreateTable && isset($_POST['generate'])) || $this->forceTableCreate) {
-            $this->dropIfExists = $this->forceTableCreate ? true : $this->dropIfExists;
-            $tableGenerator = new TableBuilder([
-                'tableName' => $tableName,
-                'fields' => $this->fields,
-                'useTablePrefix' => $this->useTablePrefix,
-                'dropOriginTable' => $this->dropIfExists,
-            ]);
-            $tableGenerator->runQuery(true);
-        }
         $files = [];
-        if ($this->migrationCreate) {
-            $this->migrationName = Yii::$app->session->get($this->tableName) ?: false;
-            $mCreate = new TableBuilderTemplateMigration([
-                'tableName' => $tableName,
-                'fields' => $this->fields,
-                'useTablePrefix' => $this->useTablePrefix
-            ]);
-            if (!$this->migrationName) {
-                Yii::$app->session->set($this->tableName, $mCreate->migrationName);
-            }
-            $this->migrationName = $this->migrationName ?: Yii::$app->session->get($this->tableName);
-            $mCreate->migrationName = $this->migrationName ?: $mCreate->migrationName;
-            $files[] = new CodeFile(
-                Yii::getAlias($this->migrationPath) . '/' . $mCreate->migrationName . '.php',
-                $mCreate->runQuery()
-            );
+        $this->migrationName = Yii::$app->session->get($this->tableName) ?: false;
+        $mCreate = new TableBuilderTemplateMigration([
+            'tableName' => $tableName,
+            'fields' => $this->fields,
+            'useTablePrefix' => $this->useTablePrefix,
+        ]);
+        if (!$this->migrationName) {
+            Yii::$app->session->set($this->tableName, $mCreate->migrationName);
         }
+        $this->migrationName = $this->migrationName ?: Yii::$app->session->get($this->tableName);
+        $mCreate->migrationName = $this->migrationName ?: $mCreate->migrationName;
+        $files[] = new CodeFile(
+            Yii::getAlias($this->migrationPath) . '/' . $mCreate->migrationName . '.php',
+            $mCreate->runQuery()
+        );
 
         return $files;
     }
 
     public function getName()
     {
-        return 'Table Generator';
+        return 'Migration Generator';
     }
 
     public function defaultTemplate()
@@ -169,7 +133,7 @@ class Generator extends GeneratorBase
 
     public function getDescription()
     {
-        return 'This generator helps you create table';
+        return 'This generator helps you create migration from existing table';
     }
 
     public function stickyAttributes()

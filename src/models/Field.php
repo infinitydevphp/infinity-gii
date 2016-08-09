@@ -41,6 +41,7 @@ class Field extends Generator
     public $precision;
     public $scale;
     public $unsigned;
+    public $isCompositeKey;
 
     public $messageCategory = 'translate_table';
 
@@ -61,7 +62,7 @@ class Field extends Generator
         return [
             [['type', 'name'], RequiredValidator::className()],
             [['length', 'precision', 'scale'], NumberValidator::className()],
-            [['is_not_null', 'is_unique', 'unsigned'], BooleanValidator::className()],
+            [['is_not_null', 'is_unique', 'unsigned', 'isCompositeKey'], BooleanValidator::className()],
             [['name'], StringValidator::className(), 'max' => 50],
             [['comment', 'fk_name'], StringValidator::className(), 'max' => 255],
             [['type'], RangeValidator::className(), 'range' => $this->getTypeList()],

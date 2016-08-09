@@ -18,19 +18,6 @@ use insolita\wgadminlte\Box;
 insolita\wgadminlte\ExtAdminlteAsset::register($this);
 \dmstr\web\AdminLteAsset::register($this);
 
-$emptyBox = in_array('migrationPath', $notVisible) &&
-            in_array('autoCreateTable', $notVisible) &&
-            in_array('db', $notVisible) &&
-            in_array('createMigration', $notVisible);
-
-if (!$emptyBox) {
-    Box::begin([
-        'type' => Box::TYPE_PRIMARY,
-        'withBorder' => true,
-        'title' => 'Base options',
-        'collapse' => true,
-    ]);
-}
 if (!in_array('db', $notVisible)) {
     echo $form->field($generator, $addition . 'db');
 }
@@ -38,25 +25,10 @@ if (!in_array('migrationPath', $notVisible)) {
     echo $form->field($generator, $addition . 'migrationPath');
 }
 
-if (!in_array('createMigration', $notVisible)) {
-    echo $form->field($generator, $addition . 'createMigration')->checkbox();
-}
-
-if (!in_array('autoCreateTable', $notVisible)) {
-    echo $form->field($generator, $addition . 'autoCreateTable')->checkbox();
-}
-
 if (!in_array('useTablePrefix', $notVisible)) {
     echo $form->field($generator, $addition . 'useTablePrefix')->checkbox();
 }
 
-if (!in_array('dropIfExists', $notVisible)) {
-    echo $form->field($generator, $addition . 'dropIfExists')->checkbox();
-}
-
-if (!$emptyBox) {
-    Box::end();
-}
 Box::begin([
     'type' => Box::TYPE_PRIMARY,
     'withBorder' => true,
@@ -69,7 +41,7 @@ if (!in_array('migrationName', $notVisible)) {
 if (!in_array('tableName', $notVisible)) {
     echo $form->field($generator, $addition . 'tableName');
 }
-Box::begin([
+/*Box::begin([
     'type' => Box::TYPE_PRIMARY,
     'withBorder' => true,
     'title' => 'Input columns origin table',
@@ -104,12 +76,6 @@ echo $form->field($generator, $addition . 'fields')
                 'name' => 'length',
                 'enableError' => true,
                 'title' => 'Length'
-            ],
-            [
-                'name' => 'isCompositeKey',
-                'enableError' => true,
-                'type' => 'checkbox',
-                'title' => 'Composite PK'
             ],
             [
                 'name' => 'is_not_null',
@@ -166,7 +132,7 @@ echo $form->field($generator, $addition . 'fields')
             ],
         ],
     ]);
-Box::end();
+Box::end();*/
 Box::end();
 
 ?>
