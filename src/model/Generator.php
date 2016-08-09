@@ -448,7 +448,6 @@ class Generator extends ModelGeneratorBase
             $modelClassName = $this->generateClassName($tableName);
             $queryClassName = ($this->generateQuery) ? $this->generateQueryClassName($modelClassName) : false;
             $tableSchema = $db->getTableSchema($tableName);
-            $publicOptions = $this->getPublicOptions();
             $params = [
                 'tableName' => $tableName,
                 'className' => $modelClassName,
@@ -492,11 +491,10 @@ class Generator extends ModelGeneratorBase
     {
         $rules = parent::generateRules($table);
 
-        $behType = $this->getBehaviorsTypeByName('phone');
-        $beh = $this->getBehaviorByClass(PhoneInputBehavior::className());
-        if (is_array($behType) && $behType['attributes']['checked']) {
-            if ($beh['phoneAttribute']) {
-                $rules[] = "[['{$beh['phoneAttribute']}'], 'borales\\extensions\\phoneInput\\PhoneInputValidator']";
+        if (isset($this->behaviorsType['phone']) && isset($this->behaviorsType['phone']['checked'])
+            && $this->behaviorsType['phone']['checked']) {
+            if ($this->behaviorType['phone']['phoneAttribute']) {
+                $rules[] = "[['{$this->behaviorType['phone']['phoneAttribute']}'], 'borales\\extensions\\phoneInput\\PhoneInputValidator']";
             }
         }
 
