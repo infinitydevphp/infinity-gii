@@ -22,7 +22,7 @@ use yii\helpers\BaseInflector;
 use yii\helpers\Inflector;
 use yii\helpers\VarDumper;
 use yii\web\Controller;
-use yii2mod\gii\crud\Generator as BaseCrudGenerator;
+use yii\gii\generators\crud\Generator as BaseCrudGenerator;
 use \Yii;
 
 class Generator extends BaseCrudGenerator
