@@ -6,9 +6,6 @@ namespace infinitydevphp\gii\translateModelBehavior;
 use infinitydevphp\gii\models\Behaviors;
 use infinitydevphp\gii\models\Field;
 use infinitydevphp\tableBuilder\TableBuilder;
-use kartik\builder\Form;
-use omgdef\multilingual\MultilingualBehavior;
-use yii\base\Behavior;
 use yii\db\Connection;
 use yii\db\Exception;
 use yii\db\IntegrityException;
@@ -52,7 +49,7 @@ class Generator extends BaseGenerator
                     'attributesLang' => 'title, body, lang',
                     'langClassName' => '',
                     'languages' => null,
-                    'class' => MultilingualBehavior::className(),
+                    'class' => 'omgdef\multilingual\MultilingualBehavior',
                 ]
             ],
             'addUseQuery' => 'use omgdef\multilingual\MultilingualTrait;' . PHP_EOL,
@@ -105,7 +102,7 @@ class Generator extends BaseGenerator
                                 'attributesLang' => 'title, body, lang',
                                 'langClassName' => '',
                                 'languages' => null,
-                                'class' => MultilingualBehavior::className(),
+                                'class' => 'omgdef\multilingual\MultilingualBehavior',
                             ]
                         ],
                         'addUseQuery' => $attr == 'baseModel' ? 'use omgdef\multilingual\MultilingualTrait;' . PHP_EOL : '',
@@ -206,7 +203,7 @@ class Generator extends BaseGenerator
 
     protected function findTranslatableBehavior() {
         foreach ($this->baseModel->behaviorModels as &$behaviorModel) {
-            if ($behaviorModel->class === MultilingualBehavior::className()) {
+            if ($behaviorModel->class === 'omgdef\multilingual\MultilingualBehavior') {
                 return $behaviorModel;
             }
         }

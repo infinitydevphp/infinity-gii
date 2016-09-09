@@ -5,7 +5,6 @@ namespace infinitydevphp\gii\models;
 
 
 use borales\extensions\phoneInput\PhoneInputBehavior;
-use omgdef\multilingual\MultilingualBehavior;
 use trntv\filekit\behaviors\UploadBehavior;
 use yii\base\Model;
 use yii\behaviors\BlameableBehavior;
@@ -50,7 +49,7 @@ class Behaviors extends Model
     public $phoneAttribute;
 
     protected function checkMultLangBehavior() {
-        return $this->class === MultilingualBehavior::className();
+        return $this->class === 'omgdef\multilingual\MultilingualBehavior';
     }
 
     public function rules() {
@@ -103,7 +102,7 @@ class Behaviors extends Model
     }
 
     public function langField() {
-        if (!($this->class === MultilingualBehavior::className())) {
+        if (!($this->class === 'omgdef\multilingual\MultilingualBehavior')) {
             return;
         }
 
@@ -114,7 +113,7 @@ class Behaviors extends Model
 
     public function classValid($attribute) {
 
-        if (!($this->class === MultilingualBehavior::className())) {
+        if (!($this->class === 'omgdef\multilingual\MultilingualBehavior')) {
             return;
         }
 

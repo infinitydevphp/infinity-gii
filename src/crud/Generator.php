@@ -8,7 +8,6 @@ use common\helpers\StringHelper;
 use infinitydevphp\gii\models\Field;
 use infinitydevphp\gii\models\WidgetsCrud;
 use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
-use omgdef\multilingual\MultilingualBehavior;
 use trntv\filekit\behaviors\UploadBehavior;
 use vova07\imperavi\Widget;
 use yii\base\Model;
@@ -232,7 +231,7 @@ class Generator extends BaseCrudGenerator
                 }
 
                 $this->used = ArrayHelper::merge($this->used, $uses);
-            } else if ($_next['class'] === MultilingualBehavior::className()) {
+            } else if ($_next['class'] === 'omgdef\multilingual\MultilingualBehavior') {
                 $this->isMultilingual = true;
                 $this->languageField = $_next['languageField'];
                 $this->translateAttribute = $_next['attributes'];

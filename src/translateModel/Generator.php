@@ -6,8 +6,6 @@ namespace infinitydevphp\gii\translateModel;
 use infinitydevphp\gii\models\Behaviors;
 use infinitydevphp\gii\models\Field;
 use infinitydevphp\tableBuilder\TableBuilder;
-use omgdef\multilingual\MultilingualBehavior;
-use yii\base\Behavior;
 use yii\db\Connection;
 use yii\db\Exception;
 use yii\db\IntegrityException;

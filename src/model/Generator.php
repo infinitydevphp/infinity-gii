@@ -7,7 +7,6 @@ use infinitydevphp\gii\models\Field;
 use infinitydevphp\gii\table\Generator as TableGenerator;
 use infinitydevphp\MultipleModelValidator\MultipleModelValidator;
 use kartik\builder\Form;
-use omgdef\multilingual\MultilingualBehavior;
 use trntv\filekit\behaviors\UploadBehavior;
 use Yii;
 use yii\base\UnknownPropertyException;
@@ -53,7 +52,7 @@ class Generator extends ModelGeneratorBase
      * @return array|null
      */
     public function checkMultilingualBehavior($class = null) {
-        $class = $class ? : MultilingualBehavior::className();
+        $class = $class ? : 'omgdef\multilingual\MultilingualBehavior';
         $classes = [];
         foreach ($this->behaviorModels as $behaviorModel) {
             if ($behaviorModel->class === $class) {
@@ -300,14 +299,16 @@ class Generator extends ModelGeneratorBase
     public function stickyAttributes()
     {
         return array_merge(parent::stickyAttributes(), [
-
+            'tableName'
         ]);
     }
 
     public function beforeValidate()
     {
+        $builderOptions = is_array($this->tableBuilder) ? $this->tableBuilder : is_object($this->tableBuilder)
+            ? $this->tableBuilder->attributes : [];
         $options = ArrayHelper::merge(
-            $this->tableBuilder,
+            $builderOptions,
             [
                 'tableNameRequired' => $this->createTable,
                 'autoCreateTable' => $this->createTable,
@@ -359,11 +360,25 @@ class Generator extends ModelGeneratorBase
 
     protected function getTranslateBehavior() {
         foreach ($this->behaviorModels as $behaviorModel) {
-            if ($behaviorModel->class === MultilingualBehavior::className())
+            if ($behaviorModel->class === 'omgdef\multilingual\MultilingualBehavior')
                 return $behaviorModel;
         }
 
         return null;
+    }
+
+    public function autoCompleteData()
+    {
+        $db = $this->getDbConnection();
+        if ($db !== null) {
+            return [
+                'tableName' => function () use ($db) {
+                    return $db->getSchema()->getTableNames();
+                },
+            ];
+        } else {
+            return [];
+        }
     }
 
     public function getBehaviorByClass($class) {
