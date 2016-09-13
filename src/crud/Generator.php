@@ -37,6 +37,7 @@ class Generator extends BaseCrudGenerator
 
     public $isMultilingual = false;
     public $languageField = 'language';
+    public $moduleID = '';
 
     protected $columnUsed = [
         '' => [
@@ -134,6 +135,10 @@ class Generator extends BaseCrudGenerator
         }
 
         return false;
+    }
+
+    public function getModelNameForView() {
+        return basename(str_replace('\\', '/', $this->modelClass));
     }
 
     public $reallyControllerNs;

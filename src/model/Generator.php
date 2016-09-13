@@ -305,10 +305,8 @@ class Generator extends ModelGeneratorBase
 
     public function beforeValidate()
     {
-        $builderOptions = is_array($this->tableBuilder) ? $this->tableBuilder : is_object($this->tableBuilder)
-            ? $this->tableBuilder->attributes : [];
         $options = ArrayHelper::merge(
-            $builderOptions,
+            $this->tableBuilder,
             [
                 'tableNameRequired' => $this->createTable,
                 'autoCreateTable' => $this->createTable,
